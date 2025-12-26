@@ -721,7 +721,6 @@
  :command.go/tomorrow                    "Zu morgen springen"
  :command.go/whiteboards                 "Zu Whiteboards springen"
  :command.graph/add                      "Einen Graph hinzufügen"
- :command.graph/db-add                   "DB-Graph hinzufügen"
  :command.graph/db-save                  "Aktuelle DB auf Festplatte speichern (~/logseq/graphs/dein-aktueller-graph)"
  :command.graph/export-as-html           "Öffentliche Graphseite als HTML exportieren"
  :command.graph/open                     "Graph zum Öffnen auswählen"

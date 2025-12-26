@@ -715,7 +715,6 @@
  :command.go/tomorrow "Ir para amanhã"
  :command.go/whiteboards "Ir para whiteboards"
  :command.graph/add "Adicionar um grafo"
- :command.graph/db-add "Adicionar um grafo DB"
  :command.graph/db-save "Salve o atual db para o disco (~/logseq/graphs/seu-atual-grafo)"
  :command.graph/export-as-html "Exportar páginas de grafos públicos como HTML"
  :command.graph/open "Selecionar grafo para abrir"
@@ -798,5 +797,5 @@
 
  ;; Os comandos estão aninhados por enquanto para permanecerem sincronizados com o sistema de atalhos.
  ;; Outras linguagens não devem aninhar chaves em :commands
- 
+
  }
