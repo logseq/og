@@ -91,7 +91,7 @@ translations here are some things to keep in mind:
 * Translations usually return strings but they can return hiccup vectors with a
   fn translation. Hiccup vectors are needed when word order matters for a
   translation and formatting is involved. See [this 3 word Turkish
-  example](https://github.com/logseq/logseq/commit/1d932f07c4a0aad44606da6df03a432fe8421480#r118971415).
+  example](https://github.com/logseq/og/commit/1d932f07c4a0aad44606da6df03a432fe8421480#r118971415).
 * Translations can be anonymous fns with arguments for interpolating strings. Fns should be simple and only include the following fns: `str`, `when`, `if` and `=`.
 
 ### Spell Checker
@@ -195,7 +195,7 @@ the `:ns-regexp` option e.g. `clojure -M:test watch test --config-merge
 
 Most unit tests e.g. ones that are browser compatible and don't require node libraries, can be run from the REPL. To do so:
 
-* Start a REPL for your editor. See [here for an example](https://github.com/logseq/logseq/blob/master/docs/develop-logseq.md#repl-setup).
+* Start a REPL for your editor. See [here for an example](https://github.com/logseq/og/blob/master/docs/develop-logseq.md#repl-setup).
 * Load a test namespace.
 * Run `(cljs.test/run-tests)` to run tests for the current test namespace.
 
@@ -482,7 +482,7 @@ include a JS console and HTML inspector.
 * Our builds should not include unverified, third-party resources as this opens
   up the app to possibly harmful injections. If a third-party resource is
   included, it should be verified against an official distributor. Use
-  https://github.com/logseq/logseq/pull/9712 as an example to include a third
+  https://github.com/logseq/og/pull/9712 as an example to include a third
   party resource and not the examples under resources/js/.
 
 ## FAQ

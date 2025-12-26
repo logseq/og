@@ -61,7 +61,7 @@
 
  ;; Enabling this option converts
  ;; [[Grant Ideas]] to [[file:./grant_ideas.org][Grant Ideas]] for org-mode.
- ;; For more information, visit https://github.com/logseq/logseq/issues/672
+ ;; For more information, visit https://github.com/logseq/og/issues/672
  ;; This is _only_ for file graphs.
  ;; :org-mode/insert-file-link? false
 
@@ -239,7 +239,7 @@
  ;; 4. Use false to disable a specific shortcut.
  ;; 5. You can define multiple bindings for a single action, e.g., ["ctrl+j" "down"].
  ;; The full list of configurable shortcuts is available at:
- ;; https://github.com/logseq/logseq/blob/master/src/main/frontend/modules/shortcut/config.cljs
+ ;; https://github.com/logseq/og/blob/master/src/main/frontend/modules/shortcut/config.cljs
  ;; Example:
  ;; :shortcuts
  ;; {:editor/new-block       "enter"

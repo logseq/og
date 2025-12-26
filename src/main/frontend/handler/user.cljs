@@ -5,7 +5,6 @@
             [cljs-time.coerce :as tc]
             [cljs-time.core :as t]
             [cljs.core.async :as async :refer [<! go]]
-            [clojure.set :as set]
             [clojure.string :as string]
             [frontend.common.missionary :as c.m]
             [frontend.config :as config]
@@ -300,7 +299,7 @@
 
 (defn rtc-group?
   []
-  (boolean (seq (set/intersection (state/user-groups) #{"team" "rtc_2025_07_10"}))))
+  false)
 
 (defn alpha-user?
   []

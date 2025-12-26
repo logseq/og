@@ -229,13 +229,6 @@
 
      [:div.pl-1.content
       {:class (when-not (util/mobile?) "mt-8")}
-      (when-not (util/mobile?)
-        [:div.flex.flex-row.my-8
-         [:div.mr-8
-          (ui/button
-           "Create a new graph"
-           :on-click #(state/pub-event! [:graph/new-db-graph]))]])
-
       [:div
        [:h2.text-lg.font-medium.mb-4 (t :graph/local-graphs)]
        (when (seq local-graphs)
@@ -342,13 +335,6 @@
                                  (route-handler/redirect-to-all-graphs)))}
                   (shui/tabler-icon "folder-plus")
                   [:span (t :new-graph)]))
-
-   (when-not config/publishing?
-     (shui/button
-      {:size :sm :variant :ghost
-       :on-click #(state/pub-event! [:graph/new-db-graph])}
-      (shui/tabler-icon "database-plus")
-      [:span (if util/electron? "Create db graph" "Create new graph")]))
 
    (when-not config/publishing?
      (shui/button

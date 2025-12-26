@@ -1,8 +1,8 @@
 (ns frontend.extensions.zotero.extractor-test
   (:require [clojure.edn :as edn]
             [clojure.test :as test :refer [deftest is testing are]]
-            [shadow.resource :as rc]
-            [frontend.extensions.zotero.extractor :as extractor]))
+            [frontend.extensions.zotero.extractor :as extractor]
+            [shadow.resource :as rc]))
 
 (def data
   (-> (rc/inline "fixtures/zotero.edn")
@@ -42,7 +42,7 @@
 
       (testing "tags"
         ;; tags split by `,` are counted into different tags
-        ;; https://github.com/logseq/logseq/commit/435c2110bcc2d30ed743ba31375450f1a705b00b
+        ;; https://github.com/logseq/og/commit/435c2110bcc2d30ed743ba31375450f1a705b00b
         (is (= 20 tags)))))
 
   (testing "book"
@@ -65,7 +65,7 @@
 
       (testing "use parsed date when possible"
         (is (= "[[Mar 28th, 2011]]" (-> properties :date))))))
-  
+
   (testing "zotero imported file path"
     (are [item-key filename open] (= (extractor/zotero-imported-file-macro item-key filename) open)
       "9AUD8MNT" "a.pdf" "{{zotero-imported-file 9AUD8MNT, \"a.pdf\"}}"))
@@ -82,4 +82,4 @@
 ;;   (testing "note"
 ;;     (let [result (extractor/extract (:note-sample-1 data))]
 ;;       (is (str/starts-with? result "This study shows"))))
-)
+  )

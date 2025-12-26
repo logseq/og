@@ -32,7 +32,7 @@
                          ["Graph initial schema version" (kv-value :logseq.kv/graph-initial-schema-version)]]
                   (d/entity @conn :logseq.kv/graph-git-sha)
                   (conj ["Graph created by commit"
-                         (str "https://github.com/logseq/logseq/commit/" (kv-value :logseq.kv/graph-git-sha))])
+                         (str "https://github.com/logseq/og/commit/" (kv-value :logseq.kv/graph-git-sha))])
                   (d/entity @conn :logseq.kv/import-type)
                   (conj ["Graph imported by" (kv-value :logseq.kv/import-type)])))))
         (cli-util/error "Graph" (pr-str graph) "does not exist")))))

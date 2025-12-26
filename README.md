@@ -19,7 +19,7 @@
 <br></br>
 
 <p align="center">
-    <a href="https://github.com/logseq/logseq/releases/latest/">
+    <a href="https://github.com/logseq/og/releases/latest/">
         <img src="https://img.shields.io/badge/Download_Logseq-100000?style=for-the-badge&logo=flatpak&logoColor=white&labelColor=002b36&color=85c8c8"
             alt="Download Logseq"/></a>
 </p>
@@ -39,16 +39,16 @@
 
 <!-- dev badges -->
 <p align="center">
-    <a href="https://github.com/logseq/logseq/graphs/contributors" alt="Contributors">
-        <img src="https://img.shields.io/github/contributors/logseq/logseq?color=%2385c8c8&style=for-the-badge"/></a>
+    <a href="https://github.com/logseq/og/graphs/contributors" alt="Contributors">
+        <img src="https://img.shields.io/github/contributors/logseq/og?color=%2385c8c8&style=for-the-badge"/></a>
     <a href="#-backers" alt="Backers on Open Collective">
         <img src="https://img.shields.io/opencollective/backers/logseq?color=%2385c8c8&style=for-the-badge"/></a>
     <a href="#-sponsors" alt="Sponsors on Open Collective">
         <img src="https://img.shields.io/opencollective/sponsors/logseq?color=%2385c8c8&style=for-the-badge"/></a>
-    <a href="https://github.com/logseq/logseq/blob/master/LICENSE.md" alt="Activity">
-        <img src="https://img.shields.io/github/license/logseq/logseq?color=%2385c8c8&style=for-the-badge"/></a>
-    <a href="https://github.com/logseq/logseq/releases">
-        <img src="https://img.shields.io/github/v/release/logseq/logseq?color=%2385c8c8&style=for-the-badge"
+    <a href="https://github.com/logseq/og/blob/master/LICENSE.md" alt="Activity">
+        <img src="https://img.shields.io/github/license/logseq/og?color=%2385c8c8&style=for-the-badge"/></a>
+    <a href="https://github.com/logseq/og/releases">
+        <img src="https://img.shields.io/github/v/release/logseq/og?color=%2385c8c8&style=for-the-badge"
             alt="latest release version"></a>
 </p>
 
@@ -74,7 +74,7 @@ The DB version is in beta status while the new mobile app and RTC is in alpha. T
 
 To get started with the DB version:
 * To try the latest web version, go to https://test.logseq.com/.
-* To try the latest desktop version, login to Github and go to https://github.com/logseq/logseq/actions/workflows/build-desktop-release.yml and click on the latest release. Scroll to the bottom and under the `Artifacts` section download the artifact for your operating system.
+* To try the latest desktop version, login to Github and go to https://github.com/logseq/og/actions/workflows/build-desktop-release.yml and click on the latest release. Scroll to the bottom and under the `Artifacts` section download the artifact for your operating system.
 * To report bugs, please file them at https://github.com/logseq/db-test/issues.
 * For feature or enhancement requests, please file them on Discord on the `#db-feedback` channel.
 * For discussion, see the `#db-chat` channel in Discord.
@@ -89,7 +89,7 @@ In addition to its core features, Logseq has a growing ecosystem of **plugins** 
 
 ![logseq-demo](https://user-images.githubusercontent.com/25513724/221387376-4dc419c2-0d0a-460c-a920-2d211e78b456.gif)
 
-<a href="https://github.com/logseq/logseq/releases/latest/">
+<a href="https://github.com/logseq/og/releases/latest/">
         <img src="https://img.shields.io/badge/Download_Logseq-100000?style=for-the-badge&logo=flatpak&logoColor=white&labelColor=002b36&color=85c8c8"
             align="right"
             alt="Download Logseq"/></a>
@@ -98,7 +98,7 @@ In addition to its core features, Logseq has a growing ecosystem of **plugins** 
 
 To start using Logseq, follow these simple steps:
 
-1. [Download](https://github.com/logseq/logseq/releases/latest) the latest version of Logseq
+1. [Download](https://github.com/logseq/og/releases/latest) the latest version of Logseq
 2. Install Logseq on your device and launch the application
 3. Start writing ✍️
 
@@ -108,13 +108,13 @@ That's it! You can now enjoy the benefits of using Logseq to streamline your wor
 
    ```bash
    # Download and run the installer
-   curl -fsSL https://raw.githubusercontent.com/logseq/logseq/master/scripts/install-linux.sh | bash
+   curl -fsSL https://raw.githubusercontent.com/logseq/og/master/scripts/install-linux.sh | bash
 
    # Or install a specific version
-   curl -fsSL https://raw.githubusercontent.com/logseq/logseq/master/scripts/install-linux.sh | bash -s -- 0.10.14
+   curl -fsSL https://raw.githubusercontent.com/logseq/og/master/scripts/install-linux.sh | bash -s -- 0.10.14
 
    # For user-specific installation (no root required)
-   curl -fsSL https://raw.githubusercontent.com/logseq/logseq/master/scripts/install-linux.sh | bash -s -- --user
+   curl -fsSL https://raw.githubusercontent.com/logseq/og/master/scripts/install-linux.sh | bash -s -- --user
    ```
 
 ## 📚 Learn more
@@ -155,7 +155,7 @@ Thank you for using Logseq, and we look forward to seeing what you create with o
 ## 🌟 Contributing to Logseq
 
 To start contributing to Logseq, please read [CONTRIBUTING.md](CONTRIBUTING.md).
-There are ways to contribute [with code](https://github.com/logseq/logseq/blob/master/CONTRIBUTING.md#code-contributions) and [without code](https://github.com/logseq/logseq/blob/master/CONTRIBUTING.md#-how-can-i-help). We welcome all
+There are ways to contribute [with code](https://github.com/logseq/og/blob/master/CONTRIBUTING.md#code-contributions) and [without code](https://github.com/logseq/og/blob/master/CONTRIBUTING.md#-how-can-i-help). We welcome all
 contributions, big or small, and we appreciate your time and effort in helping
 us improve Logseq. We look forward to your contributions 🚀
 
@@ -199,8 +199,8 @@ We want to express our sincere gratitude to our [Open Collective](https://openco
 ## 🌟 Contributors
 
 <p align="center">
-    <a href="https://github.com/logseq/logseq/graphs/contributors">
-        <img src="https://contrib.rocks/image?repo=logseq/logseq&max=300&columns=14" width="600"/></a>
+    <a href="https://github.com/logseq/og/graphs/contributors">
+        <img src="https://contrib.rocks/image?repo=logseq/og&max=300&columns=14" width="600"/></a>
 </p>
 
 <!-- JetBrains Logo -->

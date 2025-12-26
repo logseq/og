@@ -128,7 +128,7 @@
       (let [revision (string/replace config/revision "-dirty" "")]
         [:div.mobile-setting-item
          {:on-click (fn []
-                      (js/window.open (str "https://github.com/logseq/logseq/commit/" revision)))}
+                      (js/window.open (str "https://github.com/logseq/og/commit/" revision)))}
          [:span.text-base "Revision"]
          [:span.text-sm revision]])
 
@@ -161,7 +161,7 @@
         [:div.flex.items-center
          (ui/icon "message")
          [:span.ml-1 "Forum"]]]
-       [:a {:href "https://github.com/logseq/logseq"
+       [:a {:href "https://github.com/logseq/og"
             :target "_blank"}
         [:div.flex.items-center
          (ui/icon "brand-github")

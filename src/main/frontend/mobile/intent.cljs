@@ -177,7 +177,7 @@
                     (notification/show!
                      [:div
                       (str "Import " application-type " file has not been supported. You can report it on ")
-                      [:a {:href "https://github.com/logseq/logseq/issues"
+                      [:a {:href "https://github.com/logseq/og/issues"
                            :target "_blank"} "Github"]
                       ". We will look into it soon."]
                      :warning false))]
@@ -228,7 +228,7 @@
       (notification/show!
        [:div
         "Parsing current shared content are not supported. Please report the following codes on "
-        [:a {:href "https://github.com/logseq/logseq/issues/new?labels=from:in-app&template=bug_report.yaml"
+        [:a {:href "https://github.com/logseq/og/issues/new?labels=from:in-app&template=bug_report.yaml"
              :target "_blank"} "Github"]
         ". We will look into it soon."
         [:pre.code (with-out-str (pprint/pprint resource))]] :warning false))
@@ -241,7 +241,7 @@
       (notification/show!
        [:div
         "Parsing current shared content are not supported. Please report the following codes on "
-        [:a {:href "https://github.com/logseq/logseq/issues/new?labels=from:in-app&template=bug_report.yaml"
+        [:a {:href "https://github.com/logseq/og/issues/new?labels=from:in-app&template=bug_report.yaml"
              :target "_blank"} "Github"]
         ". We will look into it soon."
         [:pre.code (with-out-str (pprint/pprint resource))]] :warning false))))
@@ -314,7 +314,7 @@
         (notification/show!
          [:div
           "Parsing current shared content are not supported. Please report the following codes on "
-          [:a {:href "https://github.com/logseq/logseq/issues/new?labels=from:in-app&template=bug_report.yaml"
+          [:a {:href "https://github.com/logseq/og/issues/new?labels=from:in-app&template=bug_report.yaml"
                :target "_blank"} "Github"]
           ". We will look into it soon."
           [:pre.code (with-out-str (pprint/pprint result))]] :warning false)))))

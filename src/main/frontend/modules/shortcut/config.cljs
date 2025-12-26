@@ -472,10 +472,6 @@
                                              :inactive config/publishing?
                                              :binding []}
 
-   :graph/db-add                            {:fn #(state/pub-event! [:graph/new-db-graph])
-                                             :inactive config/publishing?
-                                             :binding false}
-
    :graph/db-save                           {:fn #(state/pub-event! [:graph/save-db-to-disk])
                                              :inactive (not (util/electron?))
                                              :binding "mod+s"}
@@ -784,7 +780,6 @@
           :graph/open
           :graph/remove
           :graph/add
-          :graph/db-add
           :graph/db-save
           :graph/re-index
           :editor/cycle-todo

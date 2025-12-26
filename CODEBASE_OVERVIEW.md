@@ -1,6 +1,6 @@
 # Logseq Codebase Overview
 
-This document helps you understand more about how Logseq works. To contribute, read the [README](https://github.com/logseq/logseq) first.
+This document helps you understand more about how Logseq works. To contribute, read the [README](https://github.com/logseq/og) first.
 
 ## Tech Stack
 

@@ -10,7 +10,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/logseq/logseq.git"
+    "url": "git+https://github.com/logseq/og.git"
   },
   "keywords": [
     "logseq",
@@ -21,7 +21,7 @@
   "author": "logseq",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/logseq/logseq/issues"
+    "url": "https://github.com/logseq/og/issues"
   },
-  "homepage": "https://github.com/logseq/logseq#readme"
+  "homepage": "https://github.com/logseq/og#readme"
 }

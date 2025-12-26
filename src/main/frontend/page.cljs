@@ -1,20 +1,20 @@
 (ns frontend.page
   "Provides root component for both Logseq app and publishing build"
-  (:require [logseq.shui.ui :as shui]
-            [rum.core :as rum]
-            [frontend.state :as state]
-            [frontend.config :as config]
-            [frontend.ui :as ui]
-            [frontend.components.container :as container]
-            [frontend.handler.search :as search-handler]
-            [frontend.handler.notification :as notification]
+  (:require [frontend.components.container :as container]
             [frontend.components.onboarding.quick-tour :as quick-tour]
-            [frontend.handler.plugin :as plugin-handler]
             [frontend.components.plugins :as plugin]
+            [frontend.config :as config]
             [frontend.context.i18n :refer [t]]
             [frontend.handler.export :as export]
+            [frontend.handler.notification :as notification]
+            [frontend.handler.plugin :as plugin-handler]
+            [frontend.handler.search :as search-handler]
+            [frontend.state :as state]
+            [frontend.ui :as ui]
             [frontend.util :as util]
-            [reitit.frontend.easy :as rfe]))
+            [logseq.shui.ui :as shui]
+            [reitit.frontend.easy :as rfe]
+            [rum.core :as rum]))
 
 (defn- setup-fns!
   []
@@ -105,7 +105,7 @@
                " to switch to another graph."])
             [:p "If these troubleshooting steps have not solved your problem, please "
              [:a.underline
-              {:href "https://github.com/logseq/logseq/issues/new?labels=from:in-app&template=bug_report.yaml"}
+              {:href "https://github.com/logseq/og/issues/new?labels=from:in-app&template=bug_report.yaml"}
               "open an issue."]]]]]]]]]
      (ui/notification)]))
 
@@ -117,7 +117,7 @@
    [:p {:class "text-gray-500 mb-8"} "Oops! The page you're looking for doesn't exist."]
    (shui/button {:on-click #(rfe/push-state :home)
                  :variant :outline}
-     (shui/tabler-icon "home") "Go back home")])
+                (shui/tabler-icon "home") "Go back home")])
 
 (rum/defc current-page < rum/reactive
   {:did-mount    (fn [state]
@@ -137,13 +137,13 @@
     (let [route-name (get-in route-match [:data :name])]
       (when-let [view (:view (:data route-match))]
         (ui/catch-error-and-notify
-          (helpful-default-error-screen)
-          [:<>
-           (if (= :draw route-name)
-             (view route-match)
-             (container/root-container
-               route-match
-               (view route-match)))
-           (when config/lsp-enabled?
-             (plugin/hook-daemon-renderers))])))
+         (helpful-default-error-screen)
+         [:<>
+          (if (= :draw route-name)
+            (view route-match)
+            (container/root-container
+             route-match
+             (view route-match)))
+          (when config/lsp-enabled?
+            (plugin/hook-daemon-renderers))])))
     (not-found)))

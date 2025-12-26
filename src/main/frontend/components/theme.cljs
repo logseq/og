@@ -48,7 +48,7 @@
             ^js cls-body (.-classList js/document.body)]
         (.setAttribute doc "data-theme" theme)
         (if (= theme "dark") ;; for tailwind dark mode
-          ; The white-theme is for backward compatibility. See: https://github.com/logseq/logseq/pull/4652.
+          ; The white-theme is for backward compatibility. See: https://github.com/logseq/og/pull/4652.
           (do (.add cls "dark") (doto cls-body (.remove "white-theme" "light-theme") (.add "dark-theme")))
           (do (.remove cls "dark") (doto cls-body (.remove "dark-theme") (.add "white-theme" "light-theme"))))
         (ui/apply-custom-theme-effect! theme)
@@ -63,12 +63,12 @@
      [accent-color])
 
     (hooks/use-effect!
-      (fn []
-        (when-let [{:keys [type global]} editor-font]
-          (doto js/document.documentElement
-            (.setAttribute "data-font" (or type "default"))
-            (.setAttribute "data-font-global" (boolean global)))))
-      [editor-font])
+     (fn []
+       (when-let [{:keys [type global]} editor-font]
+         (doto js/document.documentElement
+           (.setAttribute "data-font" (or type "default"))
+           (.setAttribute "data-font-global" (boolean global)))))
+     [editor-font])
 
     (hooks/use-effect!
      #(let [doc js/document.documentElement]

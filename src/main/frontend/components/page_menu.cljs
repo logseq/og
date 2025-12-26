@@ -109,7 +109,7 @@
           ;; TODO: In the future, we'd like to extract file-related actions
           ;; (such as open-in-finder & open-with-default-app) into a sub-menu of
           ;; this one. However this component doesn't yet exist. PRs are welcome!
-          ;; Details: https://github.com/logseq/logseq/pull/3003#issuecomment-952820676
+          ;; Details: https://github.com/logseq/og/pull/3003#issuecomment-952820676
           (when file-rpath
             (let [repo-dir (config/get-repo-dir repo)
                   file-fpath (path/path-join repo-dir file-rpath)]

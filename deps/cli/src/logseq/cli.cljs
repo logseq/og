@@ -133,7 +133,7 @@
 (defn- warn-if-db-version-not-installed
   []
   (when-not (fs/existsSync (cli-common-graph/get-db-graphs-dir))
-    (println "[WARN] The database version's desktop app is not installed. Please install per https://github.com/logseq/logseq/#-database-version.")))
+    (println "[WARN] The database version's desktop app is not installed. Please install per https://github.com/logseq/og/#-database-version.")))
 
 (defn ^:api -main [& args]
   (warn-if-db-version-not-installed)

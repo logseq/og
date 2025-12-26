@@ -82,7 +82,7 @@
     (core/call-method api-proxy method args)))
 
 (defn get-state-from-store
-  "Get state from app store\nvalid state is here\nhttps://github.com/logseq/logseq/blob/master/src/main/frontend/state.cljs#L27"
+  "Get state from app store\nvalid state is here\nhttps://github.com/logseq/og/blob/master/src/main/frontend/state.cljs#L27"
   [path]
   (let [method (aget api-proxy "getStateFromStore")
         args [path]]

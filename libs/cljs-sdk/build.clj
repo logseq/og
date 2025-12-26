@@ -14,7 +14,7 @@
 
 (def pom-template
   [[:description "ClojureScript wrapper for @logseq/libs"]
-   [:url "https://github.com/logseq/logseq"]
+   [:url "https://github.com/logseq/og"]
    [:licenses
     [:license
      [:name "MIT License"]

@@ -31,7 +31,7 @@
 
 (defn- path->file-name
   ;; Only for internal paths, as they are converted to POXIS already
-  ;; https://github.com/logseq/logseq/blob/48b8e54e0fdd8fbd2c5d25b7f1912efef8814714/deps/graph-parser/src/logseq/graph_parser/extract.cljc#L32
+  ;; https://github.com/logseq/og/blob/48b8e54e0fdd8fbd2c5d25b7f1912efef8814714/deps/graph-parser/src/logseq/graph_parser/extract.cljc#L32
   ;; Should be converted to POXIS first for external paths
   [path]
   (if (string/includes? path "/")
@@ -76,7 +76,7 @@
 
 ;; Keep for backward compatibility
 ;; Rule of dir-ver 0
-;; Source: https://github.com/logseq/logseq/blob/e7110eea6790eda5861fdedb6b02c2a78b504cd9/deps/graph-parser/src/logseq/graph_parser/extract.cljc#L35
+;; Source: https://github.com/logseq/og/blob/e7110eea6790eda5861fdedb6b02c2a78b504cd9/deps/graph-parser/src/logseq/graph_parser/extract.cljc#L35
 (defn- legacy-title-parsing
   [file-name-body]
   (let [title (string/replace file-name-body "." "/")]

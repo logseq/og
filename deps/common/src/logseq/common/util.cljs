@@ -280,7 +280,7 @@
 
 (defn string-join-path
   "Replace all `strings/join` used to construct paths with this function to reduce lint output.
-  https://github.com/logseq/logseq/pull/8679"
+  https://github.com/logseq/og/pull/8679"
   [parts]
   #_:clj-kondo/ignore
   (string/join "/" parts))

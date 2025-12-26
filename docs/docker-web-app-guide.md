@@ -1,7 +1,7 @@
 # Logseq Docker Web App Guide
 
 From v0.5.6, Logseq is also available as a Docker image of Web App.
-The Docker image is available at [ghcr.io/logseq/logseq-webapp:latest](https://github.com/logseq/logseq/pkgs/container/logseq-webapp).
+The Docker image is available at [ghcr.io/logseq/og-webapp:latest](https://github.com/logseq/og/pkgs/container/logseq-webapp).
 
 > **Note**
 > Logseq web app uses [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_Access_API) to access the file system. You need a [compatible browser](https://caniuse.com/native-filesystem-api).
@@ -10,8 +10,8 @@ The Docker image is available at [ghcr.io/logseq/logseq-webapp:latest](https://g
 ## Simple one-line start(local machine)
 
 ```shell
-docker pull ghcr.io/logseq/logseq-webapp:latest
-docker run -d --rm -p 127.0.0.1:3001:80 ghcr.io/logseq/logseq-webapp:latest
+docker pull ghcr.io/logseq/og-webapp:latest
+docker run -d --rm -p 127.0.0.1:3001:80 ghcr.io/logseq/og-webapp:latest
 ```
 
 Open the browser and go to <http://localhost:3001>.
@@ -66,9 +66,9 @@ server {
 Copy the `*.key` and `ssl.conf` files to target machine.
 
 ```shell
-docker pull ghcr.io/logseq/logseq-webapp:latest
+docker pull ghcr.io/logseq/og-webapp:latest
 
-docker run -d --rm -p 8443:443 -v `pwd`:/etc/nginx/certs -v ./ssl.conf:/etc/nginx/conf.d/ssl.conf ghcr.io/logseq/logseq-webapp:latest
+docker run -d --rm -p 8443:443 -v `pwd`:/etc/nginx/certs -v ./ssl.conf:/etc/nginx/conf.d/ssl.conf ghcr.io/logseq/og-webapp:latest
 ```
 
 > **Note**

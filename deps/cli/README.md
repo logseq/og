@@ -55,7 +55,7 @@ $ logseq show db-test
 |             Graph created at |                                     Jul 12th, 2025 |
 |         Graph schema version |                              {:major 65, :minor 7} |
 | Graph initial schema version |                              {:major 65, :minor 7} |
-|      Graph created by commit | https://github.com/logseq/logseq/commit/3c93fd2637 |
+|      Graph created by commit | https://github.com/logseq/og/commit/3c93fd2637 |
 |            Graph imported by |                                  :cli/create-graph |
 ```
 

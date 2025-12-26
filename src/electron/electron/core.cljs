@@ -41,7 +41,7 @@
 (defn setup-updater! [^js win]
   ;; manual/auto updater
   (when-not linux?
-    (init-updater {:repo   "logseq/logseq"
+    (init-updater {:repo   "logseq/og"
                    :win    win})))
 
 (defn open-url-handler

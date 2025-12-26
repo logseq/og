@@ -60,16 +60,16 @@ EXAMPLES:
     $0 --user            # Install for current user
     $0 --prefix ~/.local/share/logseq  # Custom install location
 
-For more information, visit: https://github.com/logseq/logseq
+For more information, visit: https://github.com/logseq/og
 HELP
 }
 
 uninstall() {
     log_info "Searching for Logseq installations..."
-    
+
     local user_removed=false
     local system_removed=false
-    
+
     # User installation paths
     local -a user_paths=(
         "$HOME/.local/share/logseq"
@@ -77,7 +77,7 @@ uninstall() {
         "$HOME/.local/share/applications/logseq.desktop"
         "$HOME/.local/share/icons/hicolor/512x512/apps/logseq.png"
     )
-    
+
     # System installation paths
     local -a system_paths=(
         "/opt/logseq"
@@ -85,7 +85,7 @@ uninstall() {
         "/usr/share/applications/logseq.desktop"
         "/usr/share/icons/hicolor/512x512/apps/logseq.png"
     )
-    
+
     # Remove user installation
     log_info "Checking user installation..."
     for path in "${user_paths[@]}"; do
@@ -95,7 +95,7 @@ uninstall() {
             user_removed=true
         fi
     done
-    
+
     # Remove system installation
     log_info "Checking system-wide installation..."
     for path in "${system_paths[@]}"; do
@@ -110,16 +110,16 @@ uninstall() {
             fi
         fi
     done
-    
+
     # Update desktop databases
     if [[ "$user_removed" == true ]] && [[ -d "$HOME/.local/share/applications" ]]; then
         update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
     fi
-    
+
     if [[ "$system_removed" == true ]]; then
         update-desktop-database /usr/share/applications 2>/dev/null || true
     fi
-    
+
     # Final status message
     if [[ "$user_removed" == true ]] || [[ "$system_removed" == true ]]; then
         log_info "Logseq has been uninstalled successfully!"
@@ -177,7 +177,7 @@ if [[ "$USER_INSTALL" == true ]]; then
     INSTALL_DIR="${INSTALL_DIR/#\/opt\/logseq/$HOME/.local/share/logseq}"
     BIN_DIR="$HOME/.local/bin"
     mkdir -p "$BIN_DIR"
-    
+
     # Add local bin to PATH if not already there
     if ! echo "$PATH" | grep -q "$HOME/.local/bin"; then
         log_info "Adding $HOME/.local/bin to PATH..."
@@ -206,15 +206,15 @@ cd "$TEMP_DIR"
 # Determine download URL
 if [[ "$VERSION" == "latest" ]]; then
     log_info "Fetching latest release information..."
-    LATEST_RELEASE=$(curl -s https://api.github.com/repos/logseq/logseq/releases/latest)
+    LATEST_RELEASE=$(curl -s https://api.github.com/repos/logseq/og/releases/latest)
     DOWNLOAD_URL=$(echo "$LATEST_RELEASE" | grep -o '"browser_download_url": "[^"]*Logseq-linux-x64-[^"]*\.zip"' | cut -d'"' -f4)
-    
+
     if [[ -z "$DOWNLOAD_URL" ]]; then
         log_error "Could not find download URL for latest version"
         exit 1
     fi
 else
-    DOWNLOAD_URL="https://github.com/logseq/logseq/releases/download/${VERSION}/Logseq-linux-x64-${VERSION}.zip"
+    DOWNLOAD_URL="https://github.com/logseq/og/releases/download/${VERSION}/Logseq-linux-x64-${VERSION}.zip"
 fi
 
 log_info "Download URL: $DOWNLOAD_URL"
@@ -278,7 +278,7 @@ if [[ "$SKIP_DESKTOP" == false ]]; then
         ICON_DIR="$HOME/.local/share/icons/hicolor/512x512/apps/"
         mkdir -p "$ICON_DIR"
     fi
-    
+
     # Create desktop file
     cat > "$DESKTOP_FILE" << DESKTOP_EOF
 [Desktop Entry]
@@ -293,14 +293,14 @@ Categories=Office;Productivity;Utility;TextEditor;
 MimeType=application/x-logseq;
 StartupWMClass=Logseq
 DESKTOP_EOF
-    
+
     # Make desktop file executable
     chmod +x "$DESKTOP_FILE"
-    
+
     if [[ -f "$INSTALL_DIR/resources/app.asar.unpacked/dist/icon.png" ]]; then
-        
+
         cp "$INSTALL_DIR/resources/app.asar.unpacked/dist/icon.png" "$ICON_DIR/logseq.png"
-        
+
         # Update desktop file to use the copied icon
         if [[ "$USER_INSTALL" == false ]]; then
             sed -i 's|Icon=$INSTALL_DIR/resources/app.asar.unpacked/dist/icon.png|Icon=logseq|' "$DESKTOP_FILE"
@@ -309,7 +309,7 @@ DESKTOP_EOF
     if [[ "$USER_INSTALL" == true && -f "$INSTALL_DIR/resources/app/icon.png" ]]; then
         cp "$INSTALL_DIR/resources/app/icon.png" "$ICON_DIR/logseq.png"
     fi
-    
+
     # Update desktop database
     if [[ "$USER_INSTALL" == false ]]; then
         update-desktop-database /usr/share/applications/ 2>/dev/null || true
@@ -328,7 +328,7 @@ if command -v logseq >/dev/null 2>&1; then
     log_info "Version: $INSTALLED_VERSION"
     log_info "Location: $INSTALL_DIR"
     log_info "Command: logseq"
-    
+
     if [[ "$SKIP_DESKTOP" == false ]]; then
         log_info "Desktop integration: Enabled"
         log_info "You can find Logseq in your applications menu"

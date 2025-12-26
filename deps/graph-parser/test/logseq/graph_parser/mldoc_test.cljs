@@ -37,7 +37,7 @@
       "[[draws/2022-03-06-15-00-28.excalidraw]]" true
       "![a pdf](assets/2022-03-06-15-00-28.pdf)" true))
 
-  ;; https://github.com/logseq/logseq/issues/4308
+  ;; https://github.com/logseq/og/issues/4308
   (testing "parsing links should be finished"
     (are [x y] (= (gp-mldoc/link? :markdown x) y)
       "[YouTube](https://www.youtube.com/watch?v=-8ym7pyUs9gL) - [Vimeo](https://vimeo.com/677920303) {{youtube https://www.youtube.com/watch?v=-8ym7pyUs9g}}" true)))

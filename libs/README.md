@@ -18,7 +18,7 @@ import "@logseq/libs"
 
 #### APIs & Samples
 - https://logseq.github.io/plugins/
-- https://github.com/logseq/logseq-plugin-samples
+- https://github.com/logseq/og-plugin-samples
 
 #### Community templates
 

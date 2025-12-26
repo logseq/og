@@ -439,7 +439,7 @@ export interface IAppProxy {
   /**
    * Get state from app store
    * valid state is here
-   * https://github.com/logseq/logseq/blob/master/src/main/frontend/state.cljs#L27
+   * https://github.com/logseq/og/blob/master/src/main/frontend/state.cljs#L27
    *
    * @example
    * ```ts
@@ -533,7 +533,7 @@ export interface IAppProxy {
   /**
    * provide ui slot to block `renderer` macro for `{{renderer arg1, arg2}}`
    *
-   * @example https://github.com/logseq/logseq-plugin-samples/tree/master/logseq-pomodoro-timer
+   * @example https://github.com/logseq/og-plugin-samples/tree/master/logseq-pomodoro-timer
    * @example
    * ```ts
    * // e.g. {{renderer :h1, hello world, green}}
@@ -573,7 +573,7 @@ export interface IEditorProxy extends Record<string, any> {
    * @param action - can be a single callback function to run when the command is called, or an array of fixed commands with arguments
    *
    *
-   * @example https://github.com/logseq/logseq-plugin-samples/tree/master/logseq-slash-commands
+   * @example https://github.com/logseq/og-plugin-samples/tree/master/logseq-slash-commands
    *
    * @example
    * ```ts
@@ -692,7 +692,7 @@ export interface IEditorProxy extends Record<string, any> {
   isPageBlock: (block: BlockEntity | PageEntity) => Boolean
 
   /**
-   * @example https://github.com/logseq/logseq-plugin-samples/tree/master/logseq-reddit-hot-news
+   * @example https://github.com/logseq/og-plugin-samples/tree/master/logseq-reddit-hot-news
    *
    * @param srcBlock
    * @param content
@@ -712,7 +712,7 @@ export interface IEditorProxy extends Record<string, any> {
   ) => Promise<BlockEntity | null>
 
   /**
-   * @example https://github.com/logseq/logseq-plugin-samples/tree/master/logseq-reddit-hot-news
+   * @example https://github.com/logseq/og-plugin-samples/tree/master/logseq-reddit-hot-news
    *
    * `keepUUID` will allow you to set a custom UUID for blocks by setting their properties.id
    */
@@ -854,7 +854,7 @@ export interface IEditorProxy extends Record<string, any> {
   openPDFViewer: (assetBlockIdOrFileUrl: string | EntityID) => Promise<void>
 
   /**
-   * @example https://github.com/logseq/logseq-plugin-samples/tree/master/logseq-a-translator
+   * @example https://github.com/logseq/og-plugin-samples/tree/master/logseq-a-translator
    */
   onInputSelectionEnd: IUserHook<{
     caret: any
@@ -969,7 +969,7 @@ export interface IAssetsProxy {
   >
 
   /**
-   * @example https://github.com/logseq/logseq/pull/6488
+   * @example https://github.com/logseq/og/pull/6488
    * @added 0.0.10
    */
   makeSandboxStorage(): IAsyncStorage
@@ -1066,7 +1066,7 @@ export interface ILSPluginUser extends EventEmitter<LSPluginUserEvents> {
   /**
    * Inject custom css for the main Logseq app
    *
-   * @example https://github.com/logseq/logseq-plugin-samples/tree/master/logseq-awesome-fonts
+   * @example https://github.com/logseq/og-plugin-samples/tree/master/logseq-awesome-fonts
    * @example
    * ```ts
    *   logseq.provideStyle(`
@@ -1080,7 +1080,7 @@ export interface ILSPluginUser extends EventEmitter<LSPluginUserEvents> {
    * Inject custom UI at specific DOM node.
    * Event handlers can not be passed by string, so you need to create them in `provideModel`
    *
-   * @example https://github.com/logseq/logseq-plugin-samples/tree/master/logseq-a-translator
+   * @example https://github.com/logseq/og-plugin-samples/tree/master/logseq-a-translator
    * @example
    * ```ts
    * logseq.provideUI({
@@ -1097,14 +1097,14 @@ export interface ILSPluginUser extends EventEmitter<LSPluginUserEvents> {
   provideUI(ui: UIOptions): this
 
   /**
-   * @example https://github.com/logseq/logseq-plugin-samples/tree/master/logseq-awesome-fonts
+   * @example https://github.com/logseq/og-plugin-samples/tree/master/logseq-awesome-fonts
    *
    * @param schemas
    */
   useSettingsSchema(schemas: Array<SettingSchemaDesc>): this
 
   /**
-   * @example https://github.com/logseq/logseq-plugin-samples/tree/master/logseq-awesome-fonts
+   * @example https://github.com/logseq/og-plugin-samples/tree/master/logseq-awesome-fonts
    *
    * @param attrs
    */
@@ -1121,7 +1121,7 @@ export interface ILSPluginUser extends EventEmitter<LSPluginUserEvents> {
   /**
    * Set the style for the plugin's UI
    *
-   * @example https://github.com/logseq/logseq-plugin-samples/tree/master/logseq-awesome-fonts
+   * @example https://github.com/logseq/og-plugin-samples/tree/master/logseq-awesome-fonts
    * @example
    * ```ts
    * logseq.setMainUIInlineStyle({

@@ -37,7 +37,7 @@
    :url-closed
    (mapv #(hash-map :value %
                     :uuid (random-uuid))
-         ["https://logseq.com" "https://docs.logseq.com" "https://github.com/logseq/logseq"])
+         ["https://logseq.com" "https://docs.logseq.com" "https://github.com/logseq/og"])
    :number-closed
    (mapv #(hash-map :value %
                     :uuid (random-uuid))
