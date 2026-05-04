@@ -1765,12 +1765,21 @@
 (defn on-tab
   "`direction` = :left | :right."
   [direction]
-  (let [blocks (get-selected-ordered-blocks)]
+  (let [blocks (get-selected-ordered-blocks)
+        indent? (= direction :right)
+        page (state/get-current-page)
+        zoom-root (when (and (not indent?) page (util/uuid-string? page))
+                    (db/entity [:block/uuid (parse-uuid page)]))
+        blocks (if zoom-root
+                 (remove (fn [b]
+                           (= (:db/id (:block/parent b)) (:db/id zoom-root)))
+                         blocks)
+                 blocks)]
     (when (seq blocks)
       (outliner-tx/transact!
        {:outliner-op :move-blocks
         :real-outliner-op :indent-outdent}
-       (outliner-core/indent-outdent-blocks! blocks (= direction :right))))))
+       (outliner-core/indent-outdent-blocks! blocks indent?)))))
 
 (defn- get-link [format link label]
   (let [link (or link "")
@@ -2820,16 +2829,23 @@
   (let [pos (some-> (state/get-input) cursor/pos)
         {:keys [block]} (get-state)]
     (when block
-      (state/set-editor-last-pos! pos)
-      (outliner-tx/transact!
-       {:outliner-op :move-blocks
-        :real-outliner-op :indent-outdent}
-       (outliner-core/indent-outdent-blocks! [block] indent?))
-      (edit-block!
-       (db/pull (:db/id block))
-       (cursor/pos (state/get-input))
-       (:block/uuid block)))
-    (state/set-editor-op! :nil)))
+      (let [outdent-past-zoom-root? (when-not indent?
+                                      (let [page (state/get-current-page)]
+                                        (and page
+                                             (util/uuid-string? page)
+                                             (let [zoom-root (db/entity [:block/uuid (parse-uuid page)])]
+                                               (= (:db/id (:block/parent block)) (:db/id zoom-root))))))]
+        (when-not outdent-past-zoom-root?
+          (state/set-editor-last-pos! pos)
+          (outliner-tx/transact!
+           {:outliner-op :move-blocks
+            :real-outliner-op :indent-outdent}
+           (outliner-core/indent-outdent-blocks! [block] indent?))
+          (edit-block!
+           (db/pull (:db/id block))
+           (cursor/pos (state/get-input))
+           (:block/uuid block))))))
+  (state/set-editor-op! :nil))
 
 (defn keydown-tab-handler
   [direction]
