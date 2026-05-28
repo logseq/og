@@ -12,7 +12,10 @@
 
 (defmulti extract item-type)
 
-(defn citation-key [item]
+(defn citation-key-new [item]
+  (-> item :data :citation-key))
+
+(defn citation-key-old [item]
   (let [extra (-> item :data :extra)
         citation (->> extra
                       (string/split-lines)
@@ -20,6 +23,10 @@
                       first)]
     (when citation
       (string/trim (string/replace citation "Citation Key: " "")))))
+
+(defn citation-key [item]
+  (or (citation-key-new item)
+      (citation-key-old item)))
 
 (defn title [item] (-> item :data :title))
 
