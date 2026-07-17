@@ -1,3 +1,11 @@
+
+> [!IMPORTANT]  
+> **Why this repository?**  
+> As of 2.0, [`logseq/logseq`](https://github.com/logseq/logseq) has switched from using markdown files on disk to using a graph database.
+>
+> Logseq OG (this repo) maintains the prior file-based approach. You can find more details [here](https://logseq.io/p/e3YDyX5AYr)
+
+
 <!-- logo -->
 <p align="center">
     <a href="https://logseq.com" alt="Logseq Logo">
