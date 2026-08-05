@@ -556,7 +556,13 @@
   (fn [name ^js properties ^js opts]
     (some-> (if-let [page (db-model/get-page name)]
               page
-              (let [properties (bean/->clj properties)
+              ;; NOTE: `properties` is stored verbatim as the page entity's
+              ;; :block/properties (see frontend.handler.page/create!), so it must be a
+              ;; real persistent map. `bean/->clj` returns a lazy cljs-bean view, which
+              ;; datascript-transit has no write handler for -- once one is in the DB,
+              ;; every later `frontend.db/persist!` throws "Cannot write Bean" and the
+              ;; graph can never be saved again. `js->clj` converts deeply and eagerly.
+              (let [properties (js->clj properties :keywordize-keys true)
                     {:keys [redirect createFirstBlock format journal]} (bean/->clj opts)
                     name       (page-handler/create!
                                 name
