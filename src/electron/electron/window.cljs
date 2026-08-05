@@ -14,6 +14,12 @@
 
 (defonce *quitting? (atom false))
 
+(def ^:private persist-dbs-timeout-ms
+  "How long close-handler waits for the renderer to confirm the graph cache was saved
+  before closing the window regardless. Generous enough for a large graph to serialize,
+  short enough that a user never faces a window that simply refuses to close."
+  10000)
+
 (def MAIN_WINDOW_ENTRY (if dev?
                          ;"http://localhost:3001"
                          (str "file://" (node-path/join js/__dirname "index.html"))
@@ -89,12 +95,17 @@
     (.send web-contents "persist-zoom-level" (.getZoomLevel web-contents))
     (.send web-contents "persistent-dbs"))
   (async/go
-    (let [_ (async/<! state/persistent-dbs-chan)]
+    ;; This runs after (.preventDefault e), so the window is already committed to not
+    ;; closing on its own. A bare <! here means any renderer that never answers -- because
+    ;; the save threw, or the renderer is wedged -- leaves the window permanently
+    ;; unclosable, with no message to the user. Time the wait out and close regardless:
+    ;; the graph's files on disk are the source of truth, the transit blob is a cache.
+    (let [timeout-ch (async/timeout persist-dbs-timeout-ms)
+          [_ port]   (async/alts! [state/persistent-dbs-chan timeout-ch])]
+      (when (identical? port timeout-ch)
+        (logger/error "Timed out after" persist-dbs-timeout-ms
+                      "ms waiting for the graph cache to be saved. Closing the window anyway; the next startup will re-index."))
       (destroy-window! win)
-      ;; (if @*quitting?
-      ;;   (doseq [win (get-all-windows)]
-      ;;     (destroy-window! win))
-      ;;   (destroy-window! win))
       (when @*quitting?
         (async/put! state/persistent-dbs-chan true)))))
 
