@@ -304,6 +304,15 @@
   (async/put! state/persistent-dbs-chan true)
   true)
 
+;; The renderer sends this when frontend.db/persist! rejected. Without a method here
+;; it fell through to :default, electron.window/close-handler stayed parked on
+;; persistent-dbs-chan forever, and the window could never be closed again. Unblock the
+;; close: the markdown files are the source of truth, the transit file is only a cache.
+(defmethod handle :persistent-dbs-error [_window _]
+  (logger/error "Failed to persist the graph cache. Closing anyway - your files on disk are unaffected, but the next startup will re-index.")
+  (async/put! state/persistent-dbs-chan true)
+  true)
+
 ;; Search related IPCs
 (defmethod handle :search-blocks [_window [_ repo q opts]]
   (search/search-blocks repo q opts))
@@ -691,8 +700,11 @@
 (defmethod handle :cancel-all-requests [_ args]
   (apply rsapi/cancel-all-requests (rest args)))
 
-(defmethod handle :default [args]
-  (logger/error "Error: no ipc handler for:" args))
+;; `handle` is dispatched with two arguments, so a one-argument :default threw an arity
+;; exception instead of logging -- and the exception was swallowed by set-ipc-handler!,
+;; hiding the unhandled channel entirely. Log the channel name rather than the window.
+(defmethod handle :default [_window args]
+  (logger/error "Error: no ipc handler for:" (first args)))
 
 (defn broadcast-persist-graph!
   "Receive graph-name (not graph path)
