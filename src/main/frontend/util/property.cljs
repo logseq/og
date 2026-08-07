@@ -231,6 +231,15 @@
    (when (string? content)
      (let [ast (content/get-ast content format)
            title? (content/has-title? content format)
+           ;; Whether the first AST node is a real heading (as opposed to
+           ;; Paragraph/Raw_Html/Hiccup which block-with-title? also matches).
+           ;; Only real headings should have the property inserted after the
+           ;; title line. For Paragraph/Raw_Html/Hiccup (e.g. HTML blocks),
+           ;; the property must go at the very first line so that mldoc can
+           ;; parse it as a Property_Drawer. Otherwise the property ends up on
+           ;; the second line and is never recognized.
+           ;; See https://github.com/logseq/og/issues/35
+           first-node-heading? (= "Heading" (ffirst (map first ast)))
            has-properties? (or (and title?
                                     (or (mldoc/properties? (second ast))
                                         (mldoc/properties? (second
@@ -304,7 +313,7 @@
                                   has-properties?
                                   (compose-lines)
 
-                                  title?
+                                  (and title? first-node-heading?)
                                   (cons (first lines) (cons new-property-s (rest lines)))
 
                                   :else

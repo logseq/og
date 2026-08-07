@@ -428,7 +428,12 @@
                                (get-in properties [:properties :id]))]
         ;; guard against non-string custom-ids
         (when-let [custom-id (and (string? custom-id) (string/trim custom-id))]
-          (some-> custom-id parse-uuid)))
+          ;; mldoc's Property_Drawer may include trailing content after the
+          ;; id value (e.g. when the block has content on subsequent lines).
+          ;; Take only the first line so parse-uuid can match the UUID.
+          ;; See https://github.com/logseq/og/issues/35
+          (let [custom-id (-> custom-id (string/split-lines) first string/trim)]
+            (some-> custom-id parse-uuid))))
       (d/squuid)))
 
 (defn get-page-refs-from-properties
