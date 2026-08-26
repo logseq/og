@@ -233,8 +233,9 @@
          (fn []
            (state/set-state! [:electron/user-cfgs :spell-check] (not enabled?))
            (p/then (ipc/ipc :userAppCfgs :spell-check (not enabled?))
-                   #(when (js/confirm (t :relaunch-confirm-to-work))
-                      (js/logseq.api.relaunch))))
+                   #(when-not config/publishing?
+                      (when (js/confirm (t :relaunch-confirm-to-work))
+                        (js/logseq.api.relaunch)))))
          true)]]]))
 
 (rum/defcs switch-git-auto-commit-row < rum/reactive
@@ -608,7 +609,8 @@
      (ui/toggle on? on-toggle true)
      (when (not= (boolean value) on?)
        (ui/button (t :plugin/restart)
-                  :on-click #(js/logseq.api.relaunch)
+                  :on-click #(when-not config/publishing?
+                               (js/logseq.api.relaunch))
                   :small? true :intent "logseq"))]))
 
 (rum/defc http-server-enabled-switcher
@@ -622,7 +624,8 @@
      (ui/toggle on? on-toggle true)
      (when (not= (boolean value) on?)
        (ui/button (t :plugin/restart)
-                  :on-click #(js/logseq.api.relaunch)
+                  :on-click #(when-not config/publishing?
+                               (js/logseq.api.relaunch))
                   :small? true :intent "logseq"))]))
 
 (rum/defc flashcards-enabled-switcher
@@ -696,10 +699,11 @@
      "native-titlebar"
      (t :settings-page/native-titlebar)
      enabled?
-     #(when (js/confirm (t :relaunch-confirm-to-work))
-        (state/set-state! [:electron/user-cfgs :window/native-titlebar?] (not enabled?))
-        (ipc/ipc :userAppCfgs :window/native-titlebar? (not enabled?))
-        (js/logseq.api.relaunch))
+     #(when-not config/publishing?
+        (when (js/confirm (t :relaunch-confirm-to-work))
+          (state/set-state! [:electron/user-cfgs :window/native-titlebar?] (not enabled?))
+          (ipc/ipc :userAppCfgs :window/native-titlebar? (not enabled?))
+          (js/logseq.api.relaunch)))
      [:span.text-sm.opacity-50 (t :settings-page/native-titlebar-desc)])))
 
 (rum/defcs settings-general < rum/reactive
@@ -714,7 +718,8 @@
      (version-row t version)
      (language-row t preferred-language)
      (theme-modes-row t switch-theme system-theme? dark?)
-     (when (and (util/electron?) (not util/mac?)) (native-titlebar-row t))
+     (when (and (not config/publishing?) (util/electron?) (not util/mac?))
+       (native-titlebar-row t))
      (when show-radix-themes? (accent-color-row false))
      (when (config/global-config-enabled?) (edit-global-config-edn))
      (when current-repo (edit-config-edn))
@@ -744,7 +749,8 @@
      ;; (enable-block-timestamps-row t enable-block-timestamps?)
      (show-brackets-row t show-brackets?)
 
-     (when (util/electron?) (switch-spell-check-row t))
+     (when (and (not config/publishing?) (util/electron?))
+       (switch-spell-check-row t))
      (outdenting-row t logical-outdenting?)
      (showing-full-blocks t show-full-blocks?)
      (preferred-pasting-file t preferred-pasting-file?)
@@ -1055,9 +1061,9 @@
                              (when (= "Enter" (util/ekey e))
                                (update-home-page e)))}]]]])
      (whiteboards-switcher-row enable-whiteboards?)
-     (when (and (util/electron?) config/feature-plugin-system-on?)
+     (when (and (not config/publishing?) (util/electron?) config/feature-plugin-system-on?)
        (plugin-system-switcher-row))
-     (when (util/electron?)
+     (when (and (not config/publishing?) (util/electron?))
        (http-server-switcher-row))
      (flashcards-switcher-row enable-flashcards?)
      (zotero-settings-row)
