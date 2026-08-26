@@ -186,7 +186,9 @@
                        {:role "fileMenu"
                         :submenu [{:label "New Window"
                                    :click (fn []
-                                            (p/let [graph-name (get-graph-name (state/get-active-window-graph-path))
+                                            (p/let [graph-name (get-graph-name
+                                                                (state/get-window-graph-path
+                                                                 (utils/get-focused-window)))
                                                     _ (handler/broadcast-persist-graph! graph-name)]
                                               (handler/open-new-window!)))
                                    :accelerator (if mac?
