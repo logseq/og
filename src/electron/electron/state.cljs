@@ -46,16 +46,6 @@
   []
   (set (vals (:window/graph @state))))
 
-(defn get-active-window-graph-path
-  "Get the path of the graph of the currently focused window (might be `nil`)"
-  []
-  (let [windows (:window/graph @state)
-        active-windows-pairs (filter #(.isFocused (first %)) windows)
-        active-window-pair (first active-windows-pairs)
-        path (second active-window-pair)]
-    path)
-  )
-
 (defn close-window!
   [window]
   (swap! state medley/dissoc-in [:window/graph window]))
