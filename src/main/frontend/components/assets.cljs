@@ -91,7 +91,8 @@
 (rum/defc restart-button
   []
   (ui/button (t :plugin/restart)
-             :on-click #(js/logseq.api.relaunch)
+             :on-click #(when-not config/publishing?
+                          (js/logseq.api.relaunch))
              :small? true :intent "logseq"))
 
 (rum/defcs ^:large-vars/data-var alias-directories
@@ -215,7 +216,8 @@
              #(state/set-assets-alias-enabled! (not alias-enabled?))
              true)]
       [:span
-       (when alias-enabled-changed? (restart-button))]]
+       (when (and (not config/publishing?) alias-enabled-changed?)
+         (restart-button))]]
 
      (when alias-enabled?
        [:div.pt-4
