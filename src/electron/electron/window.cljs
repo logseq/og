@@ -16,8 +16,11 @@
 
 (def MAIN_WINDOW_ENTRY (if dev?
                          ;"http://localhost:3001"
-                         (str "file://" (node-path/join js/__dirname "index.html"))
-                         (str "file://" (node-path/join js/__dirname "electron.html"))))
+                         ;; Loading the renderer through Logseq's privileged
+                         ;; scheme keeps the parent origin non-opaque for
+                         ;; plugin iframe postMessage handshakes (Electron 40+).
+                         "lsp://logseq.com/index.html"
+                         "lsp://logseq.com/electron.html"))
 
 (defn create-main-window!
   ([]
