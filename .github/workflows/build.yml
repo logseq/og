@@ -82,6 +82,9 @@ jobs:
           yarn cljs:test
           node static/tests.js
 
+      - name: Run Electron main-process tests
+        run: yarn test:electron-js
+
   lint:
     runs-on: ubuntu-22.04
 

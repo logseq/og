@@ -369,6 +369,17 @@
 (defmethod handle :openDialog [^js _window _messages]
   (open-dir-dialog))
 
+(defmethod handle :openPluginDirDialog [^js _window _messages]
+  ;; Same dialog, plus the one thing the lsp:// handler cannot work out for
+  ;; itself: this directory may be served. A plugin installed from outside the
+  ;; dot-root has its assets fetched while it loads, which is BEFORE the SDK
+  ;; records it in preferences.json -- so on a first install there is nothing to
+  ;; read, and the user's own choice here is the authority. Scoped to this
+  ;; session; preferences.json covers it from the next launch.
+  (p/let [path (open-dir-dialog)]
+    (when path (js-utils/addPluginRoot path))
+    path))
+
 (defmethod handle :copyDirectory [^js _window [_ src dest opts]]
   (fs-extra/copy src dest opts))
 
@@ -517,7 +528,11 @@
 (def *request-abort-signals (atom {}))
 
 (defmethod handle :httpRequest [_ [_ req-id opts]]
-  (let [{:keys [url abortable method data returnType headers]} opts]
+  ;; `includeResponse` resolves to {:status :statusText :headers :body} instead of
+  ;; the bare parsed body, so a caller can reconstruct a real Response. Needed by
+  ;; the plugin fetch bridge, which has to preserve status codes and headers --
+  ;; plugins branch on both (e.g. 401/403 handling, Content-Type sniffing).
+  (let [{:keys [url abortable method data returnType headers includeResponse]} opts]
     (when-let [[method type] (and (not (string/blank? url))
                                   [(keyword (string/upper-case (or method "GET")))
                                    (keyword (string/lower-case (or returnType "json")))])]
@@ -526,25 +541,37 @@
                             :headers (and headers (bean/->js headers))}
                            (merge (when (and (not (contains? #{:GET :HEAD} method)) data)
                                     ;; TODO: support type of arrayBuffer
-                                    {:body (js/JSON.stringify (bean/->js data))})
+                                    ;; A string body is already serialized -- passing it through
+                                    ;; JSON.stringify again would double-encode it (the common
+                                    ;; `fetch(url, {body: JSON.stringify(x)})` shape).
+                                    {:body (if (string? data)
+                                             data
+                                             (js/JSON.stringify (bean/->js data)))})
 
                                   (when-let [^js controller (and abortable (AbortController.))]
                                     (swap! *request-abort-signals assoc req-id controller)
                                     {:signal (.-signal controller)}))))
           (p/then (fn [^js res]
-                    (case type
-                      :json
-                      (.json res)
+                    (-> (case type
+                          :json
+                          (.json res)
 
-                      :arraybuffer
-                      (.arrayBuffer res)
+                          :arraybuffer
+                          (.arrayBuffer res)
 
-                      :base64
-                      (-> (.buffer res)
-                          (p/then #(.toString % "base64")))
+                          :base64
+                          (-> (.buffer res)
+                              (p/then #(.toString % "base64")))
 
-                      :text
-                      (.text res))))
+                          :text
+                          (.text res))
+                        (p/then (fn [body]
+                                  (if includeResponse
+                                    #js {:status     (.-status res)
+                                         :statusText (.-statusText res)
+                                         :headers    (js/Object.fromEntries (.entries (.-headers res)))
+                                         :body       body}
+                                    body))))))
           (p/catch
            (fn [^js e]
              ;; TODO: handle special cases

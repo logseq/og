@@ -122,6 +122,13 @@ dummy.commit = function() {};
 dummy.raw = function() {};
 dummy.onHeadersReceived = function() {};
 dummy.responseHeaders = function() {};
+// Electron webRequest names used by the plugin CORS policy in
+// src/electron/electron/utils.js. Without these, advanced-mode property renaming
+// mangles them and the call fails at runtime with "$onBeforeRequest$ is not a
+// function" -- which aborts app setup before the 'main' IPC handler registers.
+dummy.onBeforeRequest = function() {};
+dummy.resourceType = function() {};
+dummy.frame = function() {};
 dummy.velocityDecay = function() {};
 dummy.velocityDecay = function() {};
 dummy.updatePosition = function() {};

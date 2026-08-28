@@ -484,7 +484,10 @@
 (defn load-unpacked-plugin
   []
   (when util/electron?
-    (p/let [path (ipc/ipc "openDialog")]
+    ;; openPluginDirDialog, not openDialog: the main process also has to allow the
+    ;; chosen directory to be served over lsp://, and this is the only flow where
+    ;; the user is choosing a plugin.
+    (p/let [path (ipc/ipc "openPluginDirDialog")]
       (when-not (:plugin/selected-unpacked-pkg @state/state)
         (state/set-state! :plugin/selected-unpacked-pkg path)))))
 
