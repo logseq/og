@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli'
 import fs from 'fs'
 
-const version = fs.readFileSync('static/package.json', 'utf8').match(/"version": "(.*?)"/)?.at(1) ?? '0.0.0'
+const version = fs.readFileSync('src/main/frontend/version.cljs', 'utf8').match(/defonce version "(.*?)"/)?.at(1) ?? '0.0.0'
 
 const config: CapacitorConfig = {
   appId: 'com.logseq.og',
