@@ -3,14 +3,13 @@
             [electron.search :as search]
             [electron.updater :refer [init-updater] :as updater]
             [electron.utils :refer [*win mac? linux? dev? get-win-from-sender
-                                    decode-protected-assets-schema-path get-graph-name send-to-renderer]
+                                    get-graph-name send-to-renderer]
              :as utils]
             [electron.url :refer [logseq-url-handler]]
             [electron.logger :as logger]
             [electron.server :as server]
             [clojure.string :as string]
             [promesa.core :as p]
-            [cljs-bean.core :as bean]
             [electron.configs :as cfgs]
             [electron.fs-watcher :as fs-watcher]
             ["fs" :as fs]
@@ -92,26 +91,29 @@
 (defn setup-interceptor! [^js app]
   (.setAsDefaultProtocolClient app LSP_SCHEME)
 
+  ;; Seed BEFORE the protocol is registered, and so before any window can load:
+  ;; the handler refuses a root it has not been told about, and the persisted
+  ;; alias directories are the only ones known this early (the renderer pushes
+  ;; its own copy once it boots).
+  (logger/info
+   (str "Asset roots seeded for assets://: " (state/reseed-asset-roots!)))
+
   (.registerFileProtocol
    protocol FILE_ASSETS_SCHEME
    (fn [^js request callback]
-     (let [url (.-url request)
-           url (decode-protected-assets-schema-path url)
-           path (string/replace url "assets://" "")
-           path (js/decodeURIComponent path)]
-       (cond (or (string/starts-with? path "/")
-                 (re-find #"(?i)^/[a-zA-Z]:" path))
-             (callback #js {:path path})
-
-             ;; assume winwdows unc path
-             utils/win32?
-             (do (logger/debug :resolve-assets-url url)
-                 (callback #js {:path (str "//" path)}))
-
-             :else
-             (do
-               (logger/warn ::resolve-assets-url "Unknown assets url" url)
-               (callback #js {:path path}))))))
+     ;; The whole decision -- unescape, decode, and refuse anything outside a
+     ;; registered root -- lives in js-utils/resolveAssetsSchemeUrl so the
+     ;; Electron regression suite exercises the same code the app runs
+     ;; (test/electron-js/asset-protocol.test.mjs).
+     (let [url (.-url request)]
+       (if-let [path (js-utils/resolveAssetsSchemeUrl url)]
+         (callback #js {:path path})
+         (do
+           (logger/warn ::resolve-assets-url "Refused out-of-root assets:// url" url)
+           ;; net::ERR_FILE_NOT_FOUND -- as in the lsp:// handler, deliberately
+           ;; indistinguishable from a genuinely missing file, so this is not a
+           ;; probe oracle.
+           (callback #js {:error -6}))))))
 
   (.registerFileProtocol
    protocol FILE_LSP_SCHEME
@@ -322,20 +324,18 @@
     (do
       (search/close!)
       (.quit app))
-    (let [privileges {:standard        true
-                      :secure          true
-                      :bypassCSP       true
-                      :supportFetchAPI true}]
+    (do
+      ;; #js literals rather than a cljs->js walk: the privilege tables are real JS
+      ;; objects exported from js-utils (see ASSETS_SCHEME_PRIVILEGES for why
+      ;; assets:// needs supportFetchAPI + corsEnabled and must NOT be standard),
+      ;; and walking them through bean would rebuild what is already correct.
       (.registerSchemesAsPrivileged
-       protocol (bean/->js [{:scheme     LSP_SCHEME
-                             :privileges privileges}
-                            {:scheme     FILE_LSP_SCHEME
-                             :privileges privileges}
-                            {:scheme     FILE_ASSETS_SCHEME
-                             :privileges {:standard        false
-                                          :secure          false
-                                          :bypassCSP       false
-                                          :supportFetchAPI false}}]))
+       protocol (array #js {:scheme     LSP_SCHEME
+                            :privileges js-utils/LSP_SCHEME_PRIVILEGES}
+                       #js {:scheme     FILE_LSP_SCHEME
+                            :privileges js-utils/LSP_SCHEME_PRIVILEGES}
+                       #js {:scheme     FILE_ASSETS_SCHEME
+                            :privileges js-utils/ASSETS_SCHEME_PRIVILEGES}))
 
       (set-app-menu!)
       (setup-deeplink!)

@@ -213,6 +213,160 @@ export const resolveWithin = (root, relative) => {
   return null
 }
 
+// ---------------------------------------------------------------------------
+// Scheme privileges
+//
+// Single-sourced here rather than inline at the registerSchemesAsPrivileged
+// call so the Electron regression suite can register the SAME values the app
+// does (test/electron-js/asset-protocol.test.mjs). These decide what an origin
+// is allowed to do, so a test asserting a copy of them would assert nothing.
+// ---------------------------------------------------------------------------
+
+// The renderer itself is served over lsp:// (window.cljs MAIN_WINDOW_ENTRY):
+// a file:// document has an opaque origin, which breaks the postMessage
+// handshake plugin iframes rely on from Electron 40 on.
+export const LSP_SCHEME_PRIVILEGES = {
+  // Keys are QUOTED on purpose. Closure :advanced (release builds only) renames
+  // unquoted properties in this file -- the same hazard the resolveWithin note
+  // below describes -- and Electron reads these by their real names, so a
+  // renamed key would silently register a scheme with default privileges.
+  'standard': true,
+  'secure': true,
+  'bypassCSP': true,
+  'supportFetchAPI': true,
+}
+
+// assets:// serves the user's local files to the renderer.
+//
+// supportFetchAPI + corsEnabled are LOAD-BEARING and were not always set. The
+// renderer used to be a file:// document, so a file:// asset URL was a
+// same-scheme subresource and simply worked; once the renderer moved to
+// lsp://logseq.com, Chromium refused every file:// subresource from it. pdf.js
+// surfaced that blocked read as `Missing PDF "file:///...pdf"` -- a message that
+// reads as a deleted file -- and alias-path images silently failed the same way.
+// assets:// is a different origin from lsp://logseq.com, so reaching it from the
+// renderer is a cross-origin request: without corsEnabled, Chromium refuses it
+// with "Cross origin requests are only supported for protocol schemes: ...".
+//
+// standard STAYS FALSE, and that is not an oversight. Under a standard scheme
+// Chromium re-parses the URL, and the leading slash of an absolute path becomes
+// a HOSTNAME: assets:///home/x arrives at the handler as assets://home/x
+// (host "home", pathname "/x"), so the path resolution below silently yields a
+// relative path -- and on Windows the drive letter becomes the host. Every
+// assets:// URL the renderer builds is an absolute path, so this must stay off.
+export const ASSETS_SCHEME_PRIVILEGES = {
+  // Quoted for the same reason as LSP_SCHEME_PRIVILEGES above.
+  'standard': false,
+  'secure': false,
+  'bypassCSP': false,
+  'supportFetchAPI': true,
+  'corsEnabled': true,
+}
+
+// ---------------------------------------------------------------------------
+// assets:// root containment
+//
+// The handler serves a path named in the URL, so -- exactly as for the lsp://
+// external-plugin route -- it cannot decide from the path alone whether that
+// file may be read at all. It matters more now than it did: corsEnabled makes
+// the scheme readable by fetch/XHR, and a plugin frame gets no preload bridge,
+// so assets:// is a plugin's only route to a local file. An uncontained handler
+// would hand every plugin every file on disk, readable.
+//
+// The legitimate roots are the graph directories (which main learns first-hand
+// in handler/set-current-graph!) and the asset alias directories the user picked
+// in Settings (pushed over :setAssetsAliasDirs and persisted, so the roots are
+// known before the renderer speaks after a restart).
+//
+// KNOWN LIMIT, shared with resolveWithin: containment is path-resolution only,
+// not realpath, so a symlink INSIDE a registered root that points outside it is
+// followed. Tightening that needs an async realpath per request and would still
+// race the filesystem; it is not a new exposure, since anything under a graph
+// root is already readable through the app's own file IPC.
+// ---------------------------------------------------------------------------
+const assetRoots = new Set()
+
+/**
+ * Replace the registered asset roots. Called whenever main learns the set has
+ * changed -- a graph opening or closing, or the renderer pushing the alias
+ * directories.
+ */
+export const seedAssetRoots = (roots) => {
+  assetRoots.clear()
+  if (!Array.isArray(roots)) return 0
+  for (const r of roots) {
+    if (typeof r === 'string' && r !== '') assetRoots.add(path.resolve(r))
+  }
+  return assetRoots.size
+}
+
+export const clearAssetRoots = () => {
+  assetRoots.clear()
+}
+
+export const assetRootCount = () => assetRoots.size
+
+/**
+ * Resolve `candidate` if it lands inside any registered root, else null.
+ *
+ * The containment test is PURE STRING OPS for the same reason resolveWithin's
+ * is -- see the long note there: path.sep and path.relative are only partially
+ * covered by externs, so Closure :advanced (release builds only) renames them
+ * to keys that are undefined on Node's real path object, and the check then
+ * fails silently for every contained path.
+ */
+const resolveWithinAnyRoot = (candidate) => {
+  if (typeof candidate !== 'string' || candidate === '') return null
+  const full = path.resolve(candidate)
+  for (const base of assetRoots) {
+    if (full === base || full.startsWith(base + '/') || full.startsWith(base + '\\')) {
+      return full
+    }
+  }
+  return null
+}
+
+const ASSETS_SCHEME_PREFIX = 'assets://'
+
+/**
+ * Turn an assets:// URL into the absolute path it may be served from, or null
+ * when it names a file outside every registered root (or is malformed).
+ *
+ * Deliberately NOT via `new URL`: the scheme is non-standard (see
+ * ASSETS_SCHEME_PRIVILEGES), so the whole absolute path arrives after the
+ * prefix, which is what the renderer put there.
+ */
+export const resolveAssetsSchemeUrl = (url, opts) => {
+  // Bracket access, not destructuring: a destructuring target cannot be quoted,
+  // and an :advanced-renamed key would not match what a caller passes.
+  const win32 = opts && opts['win32'] !== undefined
+    ? opts['win32']
+    : process.platform === 'win32'
+  if (typeof url !== 'string' || !url.startsWith(ASSETS_SCHEME_PREFIX)) return null
+
+  // No unescaping step: the "/logseq__colon/" encoding this handler used to
+  // undo lost its producer in fccce48c6 ("fix(windows): remove encoding assets
+  // protocol path", Oct 2022) and the decode half was dead code from then on.
+  // A Windows path arrives as /C:/... and is handled below.
+  const raw = url.slice(ASSETS_SCHEME_PREFIX.length)
+
+  let candidate
+  try {
+    candidate = decodeURIComponent(raw)
+  } catch {
+    // A malformed escape is not a path. Refuse rather than serve the raw bytes.
+    return null
+  }
+
+  // Unix absolute, or the /C:/... form Windows paths arrive in. A Windows UNC
+  // path lost one leading slash to the scheme prefix, so restore it.
+  const absolute = candidate.startsWith('/') || /^\/[a-zA-Z]:/.test(candidate)
+    ? candidate
+    : (win32 ? '//' + candidate : candidate)
+
+  return resolveWithinAnyRoot(absolute)
+}
+
 // Only these are plugin frames. Note the main renderer is ALSO lsp://logseq.com
 // (electron.html), so matching on the scheme alone would relax the app's own
 // requests too -- match on the plugin paths specifically.
