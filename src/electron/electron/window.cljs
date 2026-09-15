@@ -88,6 +88,8 @@
   (when-let [dir (state/get-window-graph-path win)]
     (close-watcher-f win dir))
   (state/close-window! win)
+  ;; The closed window's graph directory is no longer an assets:// root.
+  (state/reseed-asset-roots!)
   (let [web-contents (. win -webContents)]
     (.send web-contents "persist-zoom-level" (.getZoomLevel web-contents))
     (.send web-contents "persistent-dbs"))

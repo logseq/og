@@ -369,6 +369,26 @@
 (defmethod handle :openDialog [^js _window _messages]
   (open-dir-dialog))
 
+(defmethod handle :setAssetsAliasDirs [^js _window [_ dirs]]
+  ;; The alias directories are chosen by the user in Settings and persisted in
+  ;; renderer storage, so the renderer is their only source. That is not a
+  ;; weakening: the boundary assets:// containment defends is PLUGIN FRAMES,
+  ;; which get no preload bridge and so cannot reach this IPC at all -- while
+  ;; the main renderer already has arbitrary file access through the app's own
+  ;; file IPC, with or without this.
+  ;; Only the directories are kept, not the renderer's alias records: main has
+  ;; no use for the alias names or extension filters, and a root list is the
+  ;; whole contract.
+  (let [roots (->> (js->clj dirs :keywordize-keys true)
+                   (keep :dir)
+                   (filter string?)
+                   (remove string/blank?)
+                   (distinct)
+                   (vec))]
+    (cfgs/set-item! :assets/alias-roots roots)
+    (state/reseed-asset-roots!)
+    nil))
+
 (defmethod handle :openPluginDirDialog [^js _window _messages]
   ;; Same dialog, plus the one thing the lsp:// handler cannot work out for
   ;; itself: this directory may be served. A plugin installed from outside the
@@ -472,6 +492,9 @@
     (when (and old-path graph-path (not= old-path graph-path))
       (close-watcher-when-orphaned! window old-path))
     (swap! state/state assoc-in [:window/graph window] graph-path)
+    ;; A graph directory is an assets:// root, so the handler has to hear about
+    ;; it before the renderer asks for anything inside it.
+    (state/reseed-asset-roots!)
     nil))
 
 (defmethod handle :setCurrentGraph [^js window [_ graph-name]]
