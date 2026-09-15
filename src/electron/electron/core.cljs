@@ -3,16 +3,16 @@
             [electron.search :as search]
             [electron.updater :refer [init-updater] :as updater]
             [electron.utils :refer [*win mac? linux? dev? get-win-from-sender
-                                    decode-protected-assets-schema-path get-graph-name send-to-renderer]
+                                    get-graph-name send-to-renderer]
              :as utils]
             [electron.url :refer [logseq-url-handler]]
             [electron.logger :as logger]
             [electron.server :as server]
             [clojure.string :as string]
             [promesa.core :as p]
-            [cljs-bean.core :as bean]
             [electron.configs :as cfgs]
             [electron.fs-watcher :as fs-watcher]
+            ["fs" :as fs]
             ["path" :as node-path]
             ["electron" :refer [BrowserWindow Menu app protocol ipcMain dialog shell] :as electron]
             ["electron-deeplink" :refer [Deeplink]]
@@ -28,8 +28,12 @@
 (defonce FILE_LSP_SCHEME "lsp")
 (defonce FILE_ASSETS_SCHEME "assets")
 (defonce LSP_PROTOCOL (str FILE_LSP_SCHEME "://"))
-(defonce PLUGIN_URL (str LSP_PROTOCOL "logseq.io/"))
 (defonce STATIC_URL (str LSP_PROTOCOL "logseq.com/"))
+(defonce PLUGIN_HOST_URL (str LSP_PROTOCOL "logseq.io/"))
+(defonce PLUGIN_URL (str PLUGIN_HOST_URL "plugins/"))
+(defonce EXTERNAL_PLUGIN_URL (str LSP_PROTOCOL "logseq.io/external/"))
+(defonce HOST_PLUGIN_URL (str STATIC_URL "plugins/"))
+(defonce HOST_EXTERNAL_PLUGIN_URL (str STATIC_URL "external/"))
 (defonce PLUGINS_ROOT (.join node-path cfgs/dot-root "plugins"))
 
 (defonce *setup-fn (volatile! nil))
@@ -59,44 +63,119 @@
     (when (= (str LSP_SCHEME ":") (.-protocol parsed-url))
       (logseq-url-handler win parsed-url))))
 
+(defn- seed-external-plugin-roots!
+  "Tell the lsp:// handler which external plugin roots are legitimate.
+
+   The external route serves from a directory named IN THE URL, so containment
+   alone cannot decide whether that directory may be read at all -- a URL naming
+   any path on disk would otherwise be served over the privileged lsp:// scheme.
+   preferences.json's `externals` is the SDK's own record of the external plugins
+   the user installed, so it is the right source of truth for \"which roots may be
+   served from\", and js-utils adds the dot-root tmp dir the SDK generates plugin
+   entry documents into.
+
+   Called at startup and again whenever the handler meets a root it does not
+   recognise, so a plugin installed mid-session does not have to wait for a
+   restart to be served."
+  []
+  (let [prefs (.join node-path cfgs/dot-root "preferences.json")
+        ^js json (try
+                   (when (.existsSync fs prefs)
+                     (js/JSON.parse (.toString (.readFileSync fs prefs))))
+                   (catch :default e
+                     (logger/warn ::seed-external-roots "could not read preferences.json" e)
+                     nil))]
+    (js-utils/seedPluginRoots
+     (js-utils/pluginRootsFromPreferences cfgs/dot-root json))))
+
 (defn setup-interceptor! [^js app]
   (.setAsDefaultProtocolClient app LSP_SCHEME)
+
+  ;; Seed BEFORE the protocol is registered, and so before any window can load:
+  ;; the handler refuses a root it has not been told about, and the persisted
+  ;; alias directories are the only ones known this early (the renderer pushes
+  ;; its own copy once it boots).
+  (logger/info
+   (str "Asset roots seeded for assets://: " (state/reseed-asset-roots!)))
 
   (.registerFileProtocol
    protocol FILE_ASSETS_SCHEME
    (fn [^js request callback]
-     (let [url (.-url request)
-           url (decode-protected-assets-schema-path url)
-           path (string/replace url "assets://" "")
-           path (js/decodeURIComponent path)]
-       (cond (or (string/starts-with? path "/")
-                 (re-find #"(?i)^/[a-zA-Z]:" path))
-             (callback #js {:path path})
-
-             ;; assume winwdows unc path
-             utils/win32?
-             (do (logger/debug :resolve-assets-url url)
-                 (callback #js {:path (str "//" path)}))
-
-             :else
-             (do
-               (logger/warn ::resolve-assets-url "Unknown assets url" url)
-               (callback #js {:path path}))))))
+     ;; The whole decision -- unescape, decode, and refuse anything outside a
+     ;; registered root -- lives in js-utils/resolveAssetsSchemeUrl so the
+     ;; Electron regression suite exercises the same code the app runs
+     ;; (test/electron-js/asset-protocol.test.mjs).
+     (let [url (.-url request)]
+       (if-let [path (js-utils/resolveAssetsSchemeUrl url)]
+         (callback #js {:path path})
+         (do
+           (logger/warn ::resolve-assets-url "Refused out-of-root assets:// url" url)
+           ;; net::ERR_FILE_NOT_FOUND -- as in the lsp:// handler, deliberately
+           ;; indistinguishable from a genuinely missing file, so this is not a
+           ;; probe oracle.
+           (callback #js {:error -6}))))))
 
   (.registerFileProtocol
    protocol FILE_LSP_SCHEME
    (fn [^js request callback]
      (let [url (.-url request)
            url' ^js (js/URL. url)
-           [_ ROOT] (if (string/starts-with? url PLUGIN_URL)
-                      [PLUGIN_URL PLUGINS_ROOT]
-                      [STATIC_URL js/__dirname])
-
+           external-plugin-url? (or (string/starts-with? url EXTERNAL_PLUGIN_URL)
+                                    (string/starts-with? url HOST_EXTERNAL_PLUGIN_URL))
+           ;; The whole logseq.io host is the plugins root, so accept the bare
+           ;; legacy form (lsp://logseq.io/<pid>/...) alongside the namespaced
+           ;; one. Themes register under the legacy form and their URLs are
+           ;; persisted in preferences, so dropping it breaks every installed
+           ;; theme on upgrade.
+           plugin-url? (and (not external-plugin-url?)
+                            (or (string/starts-with? url PLUGIN_HOST_URL)
+                                (string/starts-with? url HOST_PLUGIN_URL)))
            path' (.-pathname url')
-           path' (utils/safe-decode-uri-component path')
-           path' (.join node-path ROOT path')]
+           ;; Every branch resolves through js-utils/resolveWithin, which returns
+           ;; nil when the result would escape its root. Without it a decoded ".."
+           ;; -- or, for the external form, an absolute path named directly in the
+           ;; URL -- reads any file on disk through the privileged lsp:// scheme.
+           ;; The traversal in the plugin branch predates this fork; the external
+           ;; branch is ours, and is the wider hole of the two.
+           path' (cond
+                   plugin-url?
+                   (-> path'
+                       (utils/safe-decode-uri-component)
+                       (string/replace-first #"^/plugins" "")
+                       (#(js-utils/resolveWithin PLUGINS_ROOT %)))
 
-       (callback #js {:path path'}))))
+                   external-plugin-url?
+                   (let [external-path (subs path' (count "/external/"))
+                         separator-index (string/index-of external-path "/")
+                         encoded-root (if separator-index
+                                        (subs external-path 0 separator-index)
+                                        external-path)
+                         relative-path (if separator-index
+                                         (subs external-path separator-index)
+                                         "")
+                         root (utils/safe-decode-uri-component encoded-root)
+                         relative-path (utils/safe-decode-uri-component relative-path)]
+                     ;; An external root is only legitimate if a plugin actually
+                     ;; loaded from it. Anything else is a URL naming a path it
+                     ;; has no business reading. A root the startup seeding did not
+                     ;; know about earns one re-read of preferences.json before it
+                     ;; is refused -- that is how a plugin installed mid-session
+                     ;; gets served.
+                     (js-utils/resolveExternalPluginAsset
+                      root relative-path seed-external-plugin-roots!))
+
+                   :else
+                   (-> path'
+                       (utils/safe-decode-uri-component)
+                       (#(js-utils/resolveWithin js/__dirname %))))]
+
+       (if path'
+         (callback #js {:path path'})
+         (do
+           (logger/warn ::lsp-protocol "Refused to serve out-of-root lsp:// url" url)
+           ;; net::ERR_FILE_NOT_FOUND -- deliberately indistinguishable from a
+           ;; genuinely missing file, so this is not a probe oracle.
+           (callback #js {:error -6}))))))
 
   #(do
      (.unregisterProtocol protocol FILE_LSP_SCHEME)
@@ -245,20 +324,18 @@
     (do
       (search/close!)
       (.quit app))
-    (let [privileges {:standard        true
-                      :secure          true
-                      :bypassCSP       true
-                      :supportFetchAPI true}]
+    (do
+      ;; #js literals rather than a cljs->js walk: the privilege tables are real JS
+      ;; objects exported from js-utils (see ASSETS_SCHEME_PRIVILEGES for why
+      ;; assets:// needs supportFetchAPI + corsEnabled and must NOT be standard),
+      ;; and walking them through bean would rebuild what is already correct.
       (.registerSchemesAsPrivileged
-       protocol (bean/->js [{:scheme     LSP_SCHEME
-                             :privileges privileges}
-                            {:scheme     FILE_LSP_SCHEME
-                             :privileges privileges}
-                            {:scheme     FILE_ASSETS_SCHEME
-                             :privileges {:standard        false
-                                          :secure          false
-                                          :bypassCSP       false
-                                          :supportFetchAPI false}}]))
+       protocol (array #js {:scheme     LSP_SCHEME
+                            :privileges js-utils/LSP_SCHEME_PRIVILEGES}
+                       #js {:scheme     FILE_LSP_SCHEME
+                            :privileges js-utils/LSP_SCHEME_PRIVILEGES}
+                       #js {:scheme     FILE_ASSETS_SCHEME
+                            :privileges js-utils/ASSETS_SCHEME_PRIVILEGES}))
 
       (set-app-menu!)
       (setup-deeplink!)
@@ -284,6 +361,15 @@
                (logger/info (str "Logseq App(" (.getVersion app) ") Starting... "))
 
                (utils/<restore-proxy-settings)
+
+               (logger/info
+                (str "External plugin roots seeded for lsp://: "
+                     (seed-external-plugin-roots!)))
+
+               ;; Must be installed before disableXFrameOptions: it attributes
+               ;; in-flight requests to plugin frames, and the CORS relaxation in
+               ;; that listener fails closed on anything it cannot attribute.
+               (js-utils/trackPluginFrameRequests win)
 
                (js-utils/disableXFrameOptions win)
 

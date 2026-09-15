@@ -53,13 +53,6 @@
 (defonce stats-url (str central-endpoint "stats.json"))
 (declare select-a-plugin-theme)
 
-(defn assets-theme-to-file
-  [theme]
-  (when theme
-    (cond-> theme
-      (util/electron?)
-      (update :url #(some-> % (string/replace-first "assets://" "file://"))))))
-
 (defn load-plugin-preferences
   []
   (-> (invoke-exported-api "load_user_preferences")
@@ -423,7 +416,7 @@
 (defn select-a-plugin-theme
   [pid]
   (when-let [themes (get (group-by :pid (:plugin/installed-themes @state/state)) pid)]
-    (when-let [theme (assets-theme-to-file (first themes))]
+    (when-let [theme (first themes)]
       (js/LSPluginCore.selectTheme (bean/->js theme)))))
 
 (defn update-plugin-settings-state
@@ -484,7 +477,10 @@
 (defn load-unpacked-plugin
   []
   (when util/electron?
-    (p/let [path (ipc/ipc "openDialog")]
+    ;; openPluginDirDialog, not openDialog: the main process also has to allow the
+    ;; chosen directory to be served over lsp://, and this is the only flow where
+    ;; the user is choosing a plugin.
+    (p/let [path (ipc/ipc "openPluginDirDialog")]
       (when-not (:plugin/selected-unpacked-pkg @state/state)
         (state/set-state! :plugin/selected-unpacked-pkg path)))))
 
@@ -748,7 +744,6 @@
 
                                 (.on "theme-selected" (fn [^js theme]
                                                         (let [theme (bean/->clj theme)
-                                                              theme (assets-theme-to-file theme)
                                                               url   (:url theme)
                                                               mode  (:mode theme)]
                                                           (when mode

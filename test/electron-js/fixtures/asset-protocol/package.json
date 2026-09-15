@@ -1,0 +1,6 @@
+{
+  "name": "asset-protocol-fixture",
+  "version": "1.0.0",
+  "main": "main.mjs",
+  "private": true
+}

@@ -25,7 +25,15 @@
   (let [document-mode? (or (storage/get :document/mode?) false)
         current-graph  (let [graph (storage/get :git/current-repo)]
                         (when graph (ipc/ipc "setCurrentGraph" graph))
-                        graph)]
+                        graph)
+        ;; The asset alias directories live here, in renderer storage, but the
+        ;; main process needs them as assets:// roots before it will serve an
+        ;; alias asset. Pushed at init as well as on change so a relaunch does
+        ;; not depend on the user touching Settings again. Main also mirrors
+        ;; them into its own configs.edn, which covers the window between app
+        ;; start and this push.
+        _              (when-let [dirs (storage/get :assets/alias-dirs)]
+                         (ipc/ipc "setAssetsAliasDirs" dirs))]
    (atom
     {:route-match                           nil
      :today                                 nil
@@ -414,7 +422,10 @@ should be done through this fn in order to get global config and config defaults
   [dirs]
   (when dirs
     (set-state! :assets/alias-dirs dirs)
-    (storage/set :assets/alias-dirs dirs)))
+    (storage/set :assets/alias-dirs dirs)
+    ;; An alias directory is an assets:// root; the handler refuses anything it
+    ;; has not been told about, so main has to hear about this immediately.
+    (ipc/ipc "setAssetsAliasDirs" dirs)))
 
 (defn get-custom-css-link
   []

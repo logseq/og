@@ -118,8 +118,13 @@ export class LSPluginRequest extends EventEmitter {
   > {
     const pid = this.ctx.baseInfo.id
     const { success, fail, final, ...requestOptions } = options
-    const reqID = this.ctx.Experiments.invokeExperMethod(
-      'request',
+    // Initiate over the postMessage caller rather than Experiments.invokeExperMethod.
+    // The latter does a synchronous `window.top.logseq` read, which throws for a
+    // plugin iframe on a different origin than the host (any `:effect false`
+    // plugin, served from lsp://logseq.io), so requests never start there.
+    // The abort path already goes through the caller. Ported from logseq/logseq#12753.
+    const reqID = await this.ctx._execCallableAPIAsync(
+      'exper_request',
       pid,
       requestOptions
     )

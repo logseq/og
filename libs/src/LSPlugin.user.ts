@@ -526,6 +526,154 @@ export class LSPluginUser
         actor?.reject(e)
       }
     })
+
+    this._installFetchBridge()
+  }
+
+  /**
+   * Route plugin `fetch` calls for http(s) URLs through the host process.
+   *
+   * Plugin iframes are served over the privileged `lsp://` scheme, which is a real
+   * origin, so Chromium enforces CORS on requests they make. Most endpoints a plugin
+   * talks to either send no `Access-Control-Allow-Origin` at all (ordinary web pages,
+   * local APIs such as Zotero or Syncthing) or omit the plugin's custom client header
+   * from `Access-Control-Allow-Headers`, so the request fails before it is sent. Under
+   * the old `file://` renderer Chromium applied no CORS and the same calls worked.
+   *
+   * Performing the request in the main process sidesteps the browser's CORS layer
+   * instead of disabling it: nothing in the renderer is relaxed, and the scope is
+   * exactly plugin frames. Non-http(s) URLs -- the plugin's own `lsp://` assets,
+   * `data:`, `blob:`, relative paths -- keep the native implementation.
+   */
+  private _installFetchBridge () {
+    const g = globalThis as any
+    if (g.__lspFetchBridged) return
+
+    const nativeFetch = typeof g.fetch === 'function' ? g.fetch.bind(g) : null
+    if (!nativeFetch) return
+
+    const toHeaderRecord = (h: any): Record<string, string> => {
+      const out: Record<string, string> = {}
+      if (!h) return out
+      if (typeof h.forEach === 'function') h.forEach((v: any, k: any) => { out[String(k)] = String(v) })
+      else if (Array.isArray(h)) for (const [k, v] of h) out[String(k)] = String(v)
+      else Object.assign(out, h)
+      return out
+    }
+
+    const abortError = () =>
+      typeof DOMException !== 'undefined'
+        ? new DOMException('The operation was aborted.', 'AbortError')
+        : Object.assign(new Error('The operation was aborted.'), { name: 'AbortError' })
+
+    g.fetch = async (input: any, init?: any) => {
+      const url = typeof input === 'string'
+        ? input
+        : (typeof URL !== 'undefined' && input instanceof URL ? input.href : input?.url)
+
+      if (typeof url !== 'string' || !/^https?:\/\//i.test(url)) {
+        return nativeFetch(input, init)
+      }
+
+      const req = input && typeof input === 'object' && 'url' in input ? input : null
+      const signal: AbortSignal | undefined = init?.signal ?? req?.signal
+      const credentials = init?.credentials ?? req?.credentials
+      let body = init?.body ?? undefined
+
+      // The host performs the request outside the browser, so it carries no
+      // cookies. A caller that explicitly asked for them is better served by the
+      // native path, where the browser attaches them, than by a bridged request
+      // that silently goes out unauthenticated.
+      if (credentials === 'include') {
+        return nativeFetch(input, init)
+      }
+
+      if (typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams) {
+        body = body.toString()
+      }
+
+      // The host serialises a non-string body with JSON.stringify, which turns a
+      // FormData/Blob/ArrayBuffer upload into "{}" and sends it without
+      // complaint. Silent corruption is worse than CORS, so those keep the
+      // native path.
+      if (body != null && typeof body !== 'string') {
+        return nativeFetch(input, init)
+      }
+
+      if (signal?.aborted) throw abortError()
+
+      try {
+        const options: any = {
+          url,
+          method: String(init?.method ?? req?.method ?? 'GET').toUpperCase(),
+          headers: { ...toHeaderRecord(req?.headers), ...toHeaderRecord(init?.headers) },
+          data: body,
+          returnType: 'base64',
+          includeResponse: true
+        }
+
+        let res: any
+        if (signal) {
+          // `abortable` makes _request resolve a task rather than the payload,
+          // which is the only handle the host gives us onto an in-flight request.
+          const task: any = await this.Request._request({ ...options, abortable: true })
+          const onAbort = () => task.abort?.()
+          signal.addEventListener('abort', onAbort, { once: true })
+          try {
+            res = await Promise.race([
+              task.promise,
+              new Promise((_, reject) => {
+                signal.addEventListener('abort', () => reject(abortError()), { once: true })
+              })
+            ])
+          } finally {
+            signal.removeEventListener('abort', onAbort)
+          }
+        } else {
+          res = await this.Request._request(options)
+        }
+
+        // A host without includeResponse support resolves the bare body; there is
+        // no status or headers to rebuild from, so let the native path handle it.
+        if (!res || typeof res !== 'object' || typeof res.status !== 'number') {
+          return nativeFetch(input, init)
+        }
+
+        let payload: Uint8Array | null = null
+        if (res.body) {
+          const bin = atob(res.body)
+          payload = Uint8Array.from(bin, (c: string) => c.charCodeAt(0))
+        }
+
+        // 204/205/304 are forbidden from carrying a body
+        const nullBody = res.status === 204 || res.status === 205 || res.status === 304
+
+        const response = new Response(nullBody ? null : payload, {
+          status: res.status,
+          statusText: res.statusText || '',
+          headers: res.headers || {}
+        })
+
+        // Response.url is read-only and empty on a constructed Response; plugins
+        // read it after a redirect, so publish the URL we actually requested.
+        try {
+          Object.defineProperty(response, 'url', { value: url, configurable: true })
+        } catch (e) {
+          // non-fatal: the response is still usable without it
+        }
+
+        return response
+      } catch (e) {
+        // An abort is the caller's own decision -- never retry it on the native
+        // path, which would send the request a second time.
+        if (signal?.aborted || (e as any)?.name === 'AbortError') throw e
+        // Otherwise never turn a request the native path could have served into a
+        // hard failure -- fall back rather than propagating a bridge-side error.
+        return nativeFetch(input, init)
+      }
+    }
+
+    g.__lspFetchBridged = true
   }
 
   // Life related
