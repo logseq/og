@@ -13,13 +13,16 @@
 (defmulti extract item-type)
 
 (defn citation-key [item]
-  (let [extra (-> item :data :extra)
-        citation (->> extra
-                      (string/split-lines)
-                      (filterv (fn [s] (string/includes? s "Citation Key: ")))
-                      first)]
-    (when citation
-      (string/trim (string/replace citation "Citation Key: " "")))))
+  (let [native-key (-> item :data :citation-key)]
+    (if-not (string/blank? native-key)
+      native-key
+      (let [extra (-> item :data :extra)
+            citation (->> extra
+                          (string/split-lines)
+                          (filterv (fn [s] (string/includes? s "Citation Key: ")))
+                          first)]
+        (when citation
+          (string/trim (string/replace citation "Citation Key: " "")))))))
 
 (defn title [item] (-> item :data :title))
 

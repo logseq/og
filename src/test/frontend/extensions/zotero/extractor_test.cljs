@@ -8,6 +8,18 @@
   (-> (rc/inline "fixtures/zotero.edn")
       (edn/read-string)))
 
+(deftest citation-key-test
+  (let [item (:journal-article-sample-1 data)]
+    (testing "native Zotero citation key takes precedence over Extra"
+      (let [item (assoc-in item [:data :citation-key] "nativeKey2026")]
+        (is (= "nativeKey2026" (extractor/citation-key item)))
+        (is (= "@nativeKey2026" (:page-name (extractor/extract item))))))
+
+    (testing "older Better BibTeX key in Extra remains supported"
+      (is (= "efroniHowCombineTreeSearch2019" (extractor/citation-key item)))
+      (is (= "efroniHowCombineTreeSearch2019"
+             (extractor/citation-key (assoc-in item [:data :citation-key] "")))))))
+
 (deftest extract-test
   (testing "journal article"
     (let [{:keys [page-name properties]}
