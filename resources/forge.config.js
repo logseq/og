@@ -93,6 +93,18 @@ module.exports = {
     }
   ],
 
+  hooks: {
+    // electron-forge-maker-appimage hardcodes app-builder-lib's default Electron icons with no config option
+    preMake: async () => {
+      const target = path.join(__dirname, 'node_modules/app-builder-lib/templates/icons/electron-linux')
+      if (!fs.existsSync(target)) return
+      const source = path.join(__dirname, 'icons/linux')
+      for (const file of fs.readdirSync(source)) {
+        fs.copyFileSync(path.join(source, file), path.join(target, file))
+      }
+    }
+  },
+
   publishers: [
     {
       name: '@electron-forge/publisher-github',
