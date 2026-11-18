@@ -1,0 +1,129 @@
+name: Validate Windows desktop release
+on:
+  push:
+    branches:
+      - codex/validate-windows-forge
+permissions:
+  contents: read
+  actions: read
+env:
+  CLOJURE_VERSION: 1.11.1.1413
+  NODE_VERSION: "22"
+  JAVA_VERSION: "17"
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout build fix
+        uses: actions/checkout@v4
+        with:
+          ref: fd62a470344f41f310b66e1bba625d3902837484
+          path: release-source
+      - name: Download The Static Asset
+        uses: actions/download-artifact@v4
+        with:
+          name: static
+          path: static
+          run-id: 44323439346
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Apply updated desktop dependencies
+        shell: pwsh
+        run: >
+          $version = (Get-Content static/package.json -Raw |
+          ConvertFrom-Json).version
+
+          Copy-Item release-source/resources/package.json static/package.json -Force
+
+          Copy-Item release-source/static/yarn.lock static/yarn.lock -Force
+
+          $package = Get-Content static/package.json -Raw | ConvertFrom-Json
+
+          $package.version = $version
+
+          $package | ConvertTo-Json -Depth 100 | Set-Content static/package.json -Encoding utf8
+      - name: Retrieve tag version
+        id: ref
+        run: echo "version=$(cat ./static/VERSION)" >> $env:GITHUB_OUTPUT
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Configure Windows build tools
+        shell: pwsh
+        run: >
+          # Keep build tools outside npm's own package and use a version that
+          supports VS 2026.
+
+          $toolsDir = Join-Path $env:RUNNER_TEMP "windows-build-tools"
+
+          npm install --prefix $toolsDir node-gyp@12.4.0 --no-audit --no-fund
+
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          $nodeGyp = Join-Path $toolsDir "node_modules\node-gyp\bin\node-gyp.js"
+
+          node $nodeGyp --version
+
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          # Yarn's npm shim honors this override; PATH alone still selects npm's bundled node-gyp.
+
+          "npm_config_node_gyp=$nodeGyp" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          "NODE_GYP_FORCE_PYTHON=$(Join-Path $env:pythonLocation 'python.exe')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          $wixBin = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+
+          if (Test-Path $wixBin) {
+            echo $wixBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          }
+      - name: Deps Electron app
+        run: yarn install
+        working-directory: ./static
+      - name: Fix Deps Electron app
+        run: yarn run postinstall
+        working-directory: ./static/node_modules/dugite/
+      - name: Build/Release Electron app
+        run: yarn electron:make
+        working-directory: ./static
+        env:
+          DEBUG: electron-packager
+      - name: Save Artifact for Code Signing
+        run: >
+          mkdir builds
+
+          mv static\out\make\squirrel.windows\x64\*.exe    builds\Logseq-OG-win-x64-${{ steps.ref.outputs.version }}.exe
+
+          mv static\out\make\wix\x64\Logseq*.msi           builds\Logseq-OG-win-x64-${{ steps.ref.outputs.version }}.msi
+      - name: Sign
+        uses: azure/trusted-signing-action@v0.5.9
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: https://eus.codesigning.azure.net/
+          trusted-signing-account-name: logseqwin
+          certificate-profile-name: Logseq
+          files-folder: builds
+          files-folder-filter: exe,msi
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+      - name: Save Artifact
+        run: >
+          mv
+          static\out\make\squirrel.windows\x64\*.nupkg  builds\Logseq-OG-win-x64-${{
+          steps.ref.outputs.version }}-full.nupkg
+
+          mv static\out\make\zip\win32\x64\*.zip           builds\Logseq-OG-win-x64-${{ steps.ref.outputs.version }}.zip
+
+          mv static\out\make\squirrel.windows\x64\RELEASES builds\RELEASES
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: logseq-og-win64-builds
+          path: builds
