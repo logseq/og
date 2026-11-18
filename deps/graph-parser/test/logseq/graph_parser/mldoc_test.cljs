@@ -157,7 +157,8 @@ line 4"]
             "Heading" 5648,
             "Hiccup" 9,
             "List" 22,
-            "Paragraph" 571,
+            ;; A bare "- " is consumed as one empty heading.
+            "Paragraph" 570,
             "Properties" 87,
             "Property_Drawer" 423,
             "Quote" 24,
