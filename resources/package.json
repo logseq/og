@@ -60,6 +60,7 @@
     "electron-forge-maker-appimage": "https://github.com/logseq/electron-forge-maker-appimage.git"
   },
   "resolutions": {
+    "**/@electron/node-gyp": "npm:node-gyp@12.4.0",
     "**/electron": "43.4.1",
     "**/node-abi": "4.33.0",
     "**/node-gyp": "^12.2.0",
