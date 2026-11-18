@@ -156,7 +156,7 @@ jobs:
       - name: Upload Sentry Sourcemaps (beta only)
         if: ${{ github.repository == 'logseq/og' && github.event_name == 'workflow_dispatch' && github.event.inputs.build-target == 'beta' }}
         run: |
-          curl -sL https://sentry.io/get-cli/ | bash
+          curl -sL https://sentry.io/get-cli/ | SENTRY_CLI_VERSION=2.58.4 bash
           release_name="logseq@${{ steps.ref.outputs.version }}"
           sentry-cli releases new "${release_name}"
           sentry-cli releases files "${release_name}" upload-sourcemaps --ext map --ext js ./static/js --url-prefix '~/static/js'
@@ -347,6 +347,22 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Configure Windows build tools
+        shell: pwsh
+        run: |
+          $npmDir = Join-Path (Split-Path (Get-Command node).Source) "node_modules\npm"
+          npm install --prefix $npmDir node-gyp@^12.2.0 --no-audit --no-fund
+          node "$npmDir\node_modules\node-gyp\bin\node-gyp.js" --version
+          $wixBin = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+          if (Test-Path $wixBin) {
+            echo $wixBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          }
+
       # - name: Cache Node Modules
       #   uses: actions/cache@v4
       #   with:
@@ -479,7 +495,7 @@ jobs:
 
   build-macos-arm64:
     needs: [ compile-cljs ]
-    runs-on: macos-14
+    runs-on: macos-15
 
     steps:
       - name: Download The Static Asset
@@ -604,6 +620,7 @@ jobs:
 
       - name: Download Android Artifacts
         uses: actions/download-artifact@v4
+        if: ${{ github.event_name == 'schedule' || github.event.inputs.build-android == 'true' }}
         with:
           name: logseq-og-android-builds
           path: ./
@@ -613,14 +630,16 @@ jobs:
           sha256sum *-darwin-* > SHA256SUMS.txt
           sha256sum *-win-* >> SHA256SUMS.txt
           sha256sum *-linux-* >> SHA256SUMS.txt
-          sha256sum *.apk >> SHA256SUMS.txt
+          if ls *.apk 1>/dev/null 2>&1; then
+            sha256sum *.apk >> SHA256SUMS.txt
+          fi
           cat SHA256SUMS.txt
 
       - name: List files
         run: ls -rl
 
       - name: Update Nightly Release
-        uses: andelf/nightly-release@main
+        uses: andelf/nightly-release@5834076edc55cc05975561c9722043f072ac5c26 # main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -700,7 +719,9 @@ jobs:
           sha256sum *-darwin-* > SHA256SUMS.txt
           sha256sum *-win-* >> SHA256SUMS.txt
           sha256sum *-linux-* >> SHA256SUMS.txt
-          sha256sum *.apk >> SHA256SUMS.txt
+          if ls *.apk 1>/dev/null 2>&1; then
+            sha256sum *.apk >> SHA256SUMS.txt
+          fi
           sha256sum RELEASES >> SHA256SUMS.txt
           cat SHA256SUMS.txt
 
