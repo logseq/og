@@ -6,7 +6,7 @@
     "@logseq/nbb-logseq": "^1.2.173"
   },
   "dependencies": {
-    "mldoc": "^1.6.2"
+    "mldoc": "^1.6.3"
   },
   "scripts": {
     "test": "nbb-logseq -cp test -m nextjournal.test-runner"

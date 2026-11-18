@@ -7,6 +7,6 @@
   },
   "dependencies": {
     "fs-extra": "9.1.0",
-    "mldoc": "^1.6.2"
+    "mldoc": "^1.6.3"
   }
 }

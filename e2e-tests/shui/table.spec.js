@@ -91,7 +91,7 @@ test('table can have it\'s version changed via props', async ({ page, block, gra
   const pageTitle = await createRandomPage(page)
 
   // create a v1 table 
-  inputSimpleTable(page)
+  await inputSimpleTable(page)
 
   // find and confirm existence of first data cell
   await expect(await page.locator('table tbody tr >> nth=0').innerHTML()).toContain('A1</td>')
