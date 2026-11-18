@@ -127,7 +127,7 @@ jobs:
       - name: Upload Sentry Sourcemaps (beta only)
         if: ${{ github.repository == 'logseq/og' && (inputs.build-target == 'beta' || github.event.inputs.build-target == 'beta') }}
         run: |
-          curl -sL https://sentry.io/get-cli/ | bash
+          curl -sL https://sentry.io/get-cli/ | SENTRY_CLI_VERSION=2.58.4 bash
           release_name="logseq-android@${{ steps.ref.outputs.version }}"
           sentry-cli releases new "${release_name}"
           sentry-cli releases files "${release_name}" upload-sourcemaps --ext map --ext js ./static/js --url-prefix '~/static/js'
@@ -149,8 +149,12 @@ jobs:
       - name: Sync public to Android Project
         run: npx cap sync android
 
+      # Google stopped serving the obsolete `tools` package; the action default
+      # (`tools platform-tools`) now fails with "Failed to find package 'tools'".
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3.2.2
+        with:
+          packages: platform-tools
 
       - name: Build Android
         run: |
