@@ -355,9 +355,16 @@ jobs:
       - name: Configure Windows build tools
         shell: pwsh
         run: |
-          $npmDir = Join-Path (Split-Path (Get-Command node).Source) "node_modules\npm"
-          npm install --prefix $npmDir node-gyp@^12.2.0 --no-audit --no-fund
-          node "$npmDir\node_modules\node-gyp\bin\node-gyp.js" --version
+          # Keep build tools outside npm's own package and use a version that supports VS 2026.
+          $toolsDir = Join-Path $env:RUNNER_TEMP "windows-build-tools"
+          npm install --prefix $toolsDir node-gyp@12.4.0 --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $nodeGyp = Join-Path $toolsDir "node_modules\node-gyp\bin\node-gyp.js"
+          node $nodeGyp --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          # Yarn's npm shim honors this override; PATH alone still selects npm's bundled node-gyp.
+          "npm_config_node_gyp=$nodeGyp" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "NODE_GYP_FORCE_PYTHON=$(Join-Path $env:pythonLocation 'python.exe')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           $wixBin = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
           if (Test-Path $wixBin) {
             echo $wixBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
