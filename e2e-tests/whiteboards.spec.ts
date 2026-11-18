@@ -414,13 +414,18 @@ test('quick add another whiteboard', async ({ page }) => {
   // create a new board first
   await page.click('.nav-header .whiteboard')
   await page.click('#tl-create-whiteboard')
+  await expect(page.locator('.whiteboard-page-title .title')).toContainText(
+    'Untitled'
+  )
 
   await page.click('.whiteboard-page-title')
   await page.fill('.whiteboard-page-title input', 'my-whiteboard-3')
   await page.keyboard.press('Enter')
+  await expect(page.locator('.whiteboard-page-title .title')).toContainText(
+    'my-whiteboard-3'
+  )
 
-  const canvas = await page.waitForSelector('.logseq-tldraw')
-  await canvas.dblclick({
+  await page.locator('.logseq-tldraw').dblclick({
     position: {
       x: 200,
       y: 200,
@@ -455,8 +460,7 @@ test('go to another board and check reference', async ({ page }) => {
 })
 
 test('Create an embedded whiteboard', async ({ page }) => {
-  const canvas = await page.waitForSelector('.logseq-tldraw')
-  await canvas.dblclick({
+  await page.locator('.logseq-tldraw').dblclick({
     position: {
       x: 110,
       y: 110,
@@ -477,14 +481,13 @@ test('Create an embedded whiteboard', async ({ page }) => {
 })
 
 test('New whiteboard should have the correct name', async ({ page }) => {
-  page.locator('.tl-logseq-portal-header a').click()
+  await page.locator('.tl-logseq-portal-header a').click()
 
   await expect(page.locator('.whiteboard-page-title')).toContainText('My embedded whiteboard')
 })
 
 test('Create an embedded page', async ({ page }) => {
-  const canvas = await page.waitForSelector('.logseq-tldraw')
-  await canvas.dblclick({
+  await page.locator('.logseq-tldraw').dblclick({
     position: {
       x: 150,
       y: 150,
@@ -505,7 +508,7 @@ test('Create an embedded page', async ({ page }) => {
 })
 
 test('New page should have the correct name', async ({ page }) => {
-  page.locator('.tl-logseq-portal-header a').click()
+  await page.locator('.tl-logseq-portal-header a').click()
 
   await expect(page.locator('.ls-page-title')).toContainText('My page')
 })
