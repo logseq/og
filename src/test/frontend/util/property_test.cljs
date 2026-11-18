@@ -129,7 +129,13 @@ SCHEDULED: <2021-10-25 Mon>\n:PROPERTIES:\n:a: b\n:END:\nworld\n" "c" "d")
     (property/insert-property :markdown "#+BEGIN_QUOTE
  hello world
   #+END_QUOTE" "c" "d")
-    "c:: d\n#+BEGIN_QUOTE\n hello world\n  #+END_QUOTE"))
+    "c:: d\n#+BEGIN_QUOTE\n hello world\n  #+END_QUOTE"
+
+    (property/insert-property :markdown "<table border=\"1\">\n  <tr><td>1</td></tr>\n</table>" "id" "123")
+    "id:: 123\n<table border=\"1\">\n  <tr><td>1</td></tr>\n</table>"
+
+    (property/insert-property :markdown "[:div {:class \"a\"}\n  \"hello\"]" "id" "123")
+    "id:: 123\n[:div {:class \"a\"}\n  \"hello\"]"))
 
 (deftest test-insert-properties
   (are [x y] (= x y)
@@ -196,7 +202,10 @@ SCHEDULED: <2021-10-25 Mon>\n:PROPERTIES:\n:a: b\n:END:\nworld\n" "c" "d")
        (str "title\n" md-property "\nbody")
 
        "1. list"
-       (str md-property "\n1. list")))
+       (str md-property "\n1. list")
+
+       "<table border=\"1\">\n  <tr><td>1</td></tr>\n</table>"
+       (str md-property "\n<table border=\"1\">\n  <tr><td>1</td></tr>\n</table>")))
 
     (let [org-property ":PROPERTIES:\n:query-table: true\n:END:"]
       (are [x y] (= (property/with-built-in-properties {:query-table true} x :org) y)

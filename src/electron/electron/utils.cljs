@@ -1,6 +1,6 @@
 (ns electron.utils
   (:require ["@logseq/rsapi" :as rsapi]
-            ["electron" :refer [app BrowserWindow]]
+            ["electron" :refer [BrowserWindow]]
             ["fs-extra" :as fs]
             ["path" :as node-path]
             [clojure.string :as string]

@@ -9,6 +9,7 @@
    fetchable from the renderer's origin -- is asserted against a real Electron
    in test/electron-js/asset-protocol.test.mjs."
   (:require [cljs.test :refer [deftest testing is]]
+            [clojure.string :as string]
             [frontend.config :as config]
             [frontend.handler.assets :as assets-handler]
             [frontend.state :as state]
@@ -59,7 +60,7 @@
       #(doseq [path ["../assets/a.pdf"
                      "assets/a.pdf"
                      (str graph-dir "/assets/a.pdf")]]
-         (is (not (clojure.string/starts-with?
+         (is (not (string/starts-with?
                    (assets-handler/normalize-asset-resource-url path) "file://"))
              (str "built a file:// URL for " path
                   " -- blocked from the lsp:// renderer origin"))))))

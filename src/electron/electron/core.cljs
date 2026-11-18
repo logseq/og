@@ -30,7 +30,6 @@
 (defonce LSP_PROTOCOL (str FILE_LSP_SCHEME "://"))
 (defonce STATIC_URL (str LSP_PROTOCOL "logseq.com/"))
 (defonce PLUGIN_HOST_URL (str LSP_PROTOCOL "logseq.io/"))
-(defonce PLUGIN_URL (str PLUGIN_HOST_URL "plugins/"))
 (defonce EXTERNAL_PLUGIN_URL (str LSP_PROTOCOL "logseq.io/external/"))
 (defonce HOST_PLUGIN_URL (str STATIC_URL "plugins/"))
 (defonce HOST_EXTERNAL_PLUGIN_URL (str STATIC_URL "external/"))
@@ -319,6 +318,30 @@
              (when-let [win @*win]
                (open-url-handler win url))))))
 
+(defn- handle-main-window-close! [^js win e]
+  (git/before-graph-close-hook!)
+  (when @*quit-dirty? ;; when not updating
+    (.preventDefault e)
+
+    (let [windows (win/get-all-windows)
+          window @*win
+          multiple-windows? (> (count windows) 1)]
+      (cond
+        (or multiple-windows? (not mac?) @win/*quitting?)
+        (when window
+          (win/close-handler win handler/close-watcher-when-orphaned! e)
+          (reset! *win nil))
+
+        (and mac? (not multiple-windows?))
+        ;; Just hiding - don't do any actual closing operation
+        (do (.preventDefault ^js/Event e)
+            (if (and mac? (.isFullScreen win))
+              (do (.once win "leave-full-screen" #(.hide win))
+                  (.setFullScreen win false))
+              (.hide win)))
+        :else
+        nil))))
+
 (defn main []
   (if-not (.requestSingleInstanceLock app)
     (do
@@ -395,29 +418,7 @@
                (@*setup-fn)
 
                ;; main window events
-               (.on win "close" (fn [e]
-                                  (git/before-graph-close-hook!)
-                                  (when @*quit-dirty? ;; when not updating
-                                    (.preventDefault e)
-
-                                    (let [windows (win/get-all-windows)
-                                          window @*win
-                                          multiple-windows? (> (count windows) 1)]
-                                      (cond
-                                        (or multiple-windows? (not mac?) @win/*quitting?)
-                                        (when window
-                                          (win/close-handler win handler/close-watcher-when-orphaned! e)
-                                          (reset! *win nil))
-
-                                        (and mac? (not multiple-windows?))
-                                        ;; Just hiding - don't do any actual closing operation
-                                        (do (.preventDefault ^js/Event e)
-                                            (if (and mac? (.isFullScreen win))
-                                              (do (.once win "leave-full-screen" #(.hide win))
-                                                  (.setFullScreen win false))
-                                              (.hide win)))
-                                        :else
-                                        nil)))))
+               (.on win "close" #(handle-main-window-close! win %))
                (.on app "before-quit" (fn [_e]
                                         (reset! win/*quitting? true)))
 
