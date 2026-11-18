@@ -5015,10 +5015,10 @@ mkdirp@^1.0.3:
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-1.0.4.tgz#3eb5ed62622756d79a5f0e2a221dfebad75c2f7e"
   integrity sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==
 
-mldoc@1.6.2:
-  version "1.6.2"
-  resolved "https://registry.npmjs.org/mldoc/-/mldoc-1.6.2.tgz#1d1bd154d3c78d85a60b669c0de6099f145e15ea"
-  integrity sha512-yUY+6N+RIRzpAQAaRzzzme4VkAC9mQiG1zf/IpKU/4/Wjoo6xnfPgwbTxV3JkUifAr4zdIKjXxa1+Qiw3DvhmQ==
+mldoc@1.6.3:
+  version "1.6.3"
+  resolved "https://registry.npmjs.org/mldoc/-/mldoc-1.6.3.tgz#07264945a690b23989036bba7a197fec11bbf06b"
+  integrity sha512-RqAO0bbrsCby+5MZ/pVoe5RybL3DQq3UN3Hlp5yT3VBPXf9LaZtMsO8EJbNKMpfTntlSiUX/n6zFX7SaU8qpyg==
   dependencies:
     yargs "^12.0.2"
 
