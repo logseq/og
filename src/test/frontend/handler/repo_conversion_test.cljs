@@ -98,7 +98,11 @@
   ;; only increase over time as the docs graph rarely has deletions
   (testing "Counts"
     (is (= 211 (count files)) "Correct file count")
-    (is (= 38704 (count (d/datoms db :eavt))) "Correct datoms count")
+    ;; (#1283) in Changelog_06.md no longer creates a spurious "1283)" page
+    ;; (six datoms) or the block's :block/refs and :block/path-refs to it.
+    (is (= 38696 (count (d/datoms db :eavt))) "Correct datoms count")
+    (is (nil? (d/q '[:find ?page . :where [?page :block/name "1283)"]] db))
+        "Parenthesized issue number does not create a spurious page")
 
     (is (= 3600
            (ffirst
